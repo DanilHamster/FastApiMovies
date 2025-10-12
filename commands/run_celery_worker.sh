@@ -1,3 +1,3 @@
 #!/bin/bash
 echo "Run Celery worker..."
-poetry run celery -A src.celery_worker worker --loglevel=info
+PYTHONPATH=./src poetry run celery -A celery_worker worker --loglevel=info
