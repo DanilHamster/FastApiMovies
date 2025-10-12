@@ -4,7 +4,7 @@ from celery import Celery
 
 from celery.schedules import crontab
 
-import src.tasks # Import for register in celery
+import src.tasks  # Import for register in celery
 
 
 celery_app = Celery(
