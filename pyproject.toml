@@ -35,8 +35,32 @@ aiosqlite = "^0.21.0"
 aioboto3 = "^13.4.0"
 pytest-asyncio = "^0.25.3"
 gunicorn = "^23.0.0"
+celery = {extras = ["redis"], version = "^5.5.3"}
 
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "black (>=25.9.0,<26.0.0)"
+]
+
+[tool.black]
+line-length = 79
+target-version = ['py313']
+skip-string-normalization = false
+skip-magic-trailing-comma = false
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+  | migrations
+  | __pycache__
+  | .*\.pyc
+)/
+'''
