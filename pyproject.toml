@@ -5,7 +5,7 @@ description = "Mate task for first lesson"
 authors = ["Danylo Taranenko dtaranenko137@gmail.com"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.12"
 fastapi = "^0.115.6"
 sqlalchemy = "^2.0.36"
 pytest = "^8.3.4"
@@ -36,6 +36,7 @@ aioboto3 = "^13.4.0"
 pytest-asyncio = "^0.25.3"
 gunicorn = "^23.0.0"
 celery = {extras = ["redis"], version = "^5.5.3"}
+mypy = "^1.18.2"
 
 
 [build-system]
@@ -64,3 +65,22 @@ exclude = '''
   | .*\.pyc
 )/
 '''
+
+[tool.mypy]
+python_version = "3.12"
+plugins = []
+disallow_untyped_defs = true
+check_untyped_defs = true
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_return_any = false
+strict_optional = true
+show_error_codes = true
+pretty = true
+exclude = [
+    ".venv",
+    "venv",
+    "src/tests/",
+    "src/database/migrations/",
+]
