@@ -30,7 +30,11 @@ jobs:
 
       - name: Run mypy
         run: |
-          poetry run mypy src
+          poetry run mypy src  
+
+      - name: Run isort
+        run: |
+          poetry run isort src
 
 #      - name: Run movies tests
 #        run: |
