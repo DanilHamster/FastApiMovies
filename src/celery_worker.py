@@ -1,5 +1,7 @@
-from celery_conf import celery_app
 from celery.schedules import crontab
+
+from celery_conf import celery_app
+
 # from src.tasks import notify_user
 
 # """Example"""

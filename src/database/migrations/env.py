@@ -1,16 +1,14 @@
+import sys
 from logging.config import fileConfig
+from pathlib import Path
 
 from alembic import context
-
-from pathlib import Path
-import sys
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(BASE_DIR))
 
 from database import Base
 from database.session_postgresql import sync_postgresql_engine
-
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
