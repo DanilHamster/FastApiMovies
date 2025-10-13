@@ -18,7 +18,13 @@ from database.models.accounts import (
     RefreshTokenModel,
     UserProfileModel,
 )
-
+from database.models.movies import (
+GenreModel,
+StarModel,
+DirectorModel,
+CertificationModel,
+MovieModel
+)
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
