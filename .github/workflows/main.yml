@@ -27,6 +27,15 @@ jobs:
       - name: Run flake8
         run: |
           poetry run flake8 src
+
+      - name: Run mypy
+        run: |
+          poetry run mypy src  
+
+      - name: Run isort
+        run: |
+          poetry run isort src
+
 #      - name: Run movies tests
 #        run: |
 #          poetry run pytest src/test

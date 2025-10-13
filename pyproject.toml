@@ -2,7 +2,7 @@
 name = "src"
 version = "0.1.0"
 description = "Mate task for first lesson"
-authors = ["Danylo Taranenko dtaranenko137@gmail.com"]
+authors = ["Danylo Taranenko <dtaranenko137@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -35,8 +35,61 @@ aiosqlite = "^0.21.0"
 aioboto3 = "^13.4.0"
 pytest-asyncio = "^0.25.3"
 gunicorn = "^23.0.0"
+celery = {extras = ["redis"], version = "^5.5.3"}
+mypy = "^1.18.2"
+isort = "^7.0.0"
 
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "black (>=25.9.0,<26.0.0)"
+]
+
+[tool.black]
+line-length = 79
+target-version = ['py313']
+skip-string-normalization = false
+skip-magic-trailing-comma = false
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+  | migrations
+  | __pycache__
+  | .*\.pyc
+)/
+'''
+
+[tool.mypy]
+python_version = "3.10"
+plugins = []
+disallow_untyped_defs = true
+check_untyped_defs = true
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_return_any = false
+strict_optional = true
+show_error_codes = true
+pretty = true
+exclude = [
+    ".venv",
+    "venv",
+    "src/tests/",
+    "src/database/migrations/",
+]
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+force_grid_wrap = 0
+include_trailing_comma = true
+line_length = 119
+skip_gitignore = true

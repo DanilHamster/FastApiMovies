@@ -108,6 +108,50 @@ services:
     networks:
       - theater_network
 
+  redis:
+    image: redis:latest
+    container_name: redis_movie
+    ports:
+      - "6379:6379"
+    networks:
+      - theater_network
+
+  celery:
+    build: .
+    container_name: celery_theater
+    working_dir: /app
+    command: [ "/bin/bash", "/commands/run_celery_worker.sh" ]
+    env_file:
+      - .env
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - db
+    networks:
+      - theater_network
+
+  celery-beat:
+    build: .
+    container_name: celery_beat
+    working_dir: /app
+    command: [ "/bin/bash", "/commands/run_celery_beat.sh" ]
+    env_file:
+      - .env
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - db
+      - celery
+    networks:
+      - theater_network
+
   minio_mc:
     build:
       context: .

@@ -7,7 +7,7 @@ pwd_context = CryptContext(
 )
 
 
-def hash_password(password: str) -> str:
+def hash_password(password: str) -> str | None:
     """
     Hash a plain-text password using the configured password context.
 

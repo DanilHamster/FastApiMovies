@@ -1,6 +1,6 @@
 import logging
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 import aiosmtplib
 from jinja2 import Environment, FileSystemLoader
@@ -55,10 +55,12 @@ class EmailSender(EmailSenderInterface):
         message.attach(MIMEText(html_content, "html"))
 
         try:
-            smtp = aiosmtplib.SMTP(hostname=self._hostname, port=self._port, start_tls=self._use_tls)
+            smtp = aiosmtplib.SMTP(
+                hostname=self._hostname,
+                port=self._port,
+                start_tls=self._use_tls
+            )
             await smtp.connect()
-            if self._use_tls:
-                await smtp.starttls()
             await smtp.login(self._email, self._password)
             await smtp.sendmail(self._email, [recipient], message.as_string())
             await smtp.quit()
