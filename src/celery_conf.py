@@ -3,7 +3,6 @@ import os
 from celery import Celery
 from celery.schedules import crontab
 
-
 celery_app = Celery(
     "worker",
     broker=os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0"),
