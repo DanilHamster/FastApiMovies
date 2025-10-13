@@ -1,9 +1,8 @@
 from uuid import uuid4
+
+from sqlalchemy import DECIMAL, Column, ForeignKey, String, Table, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
-
-from sqlalchemy import String, Text, DECIMAL, UniqueConstraint, ForeignKey, Table, Column
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 
 from database import Base
 
@@ -18,6 +17,7 @@ MoviesGenresModel = Table(
 
 
 MovieStarsModel = Table(
+
     "movie_stars",
     Base.metadata,
     Column(
@@ -38,6 +38,7 @@ MovieDirectorsModel = Table(
         "director_id", ForeignKey("directors.id", ondelete="CASCADE"), primary_key=True, nullable=False),
 )
 
+
 class GenreModel(Base):
     __tablename__ = "genres"
 
@@ -50,7 +51,7 @@ class GenreModel(Base):
         back_populates="genres"
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Genre(name='{self.name}')>"
 
 
@@ -65,7 +66,7 @@ class StarModel(Base):
         back_populates="stars"
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Star(name='{self.name}')>"
 
 
@@ -80,7 +81,7 @@ class DirectorModel(Base):
         back_populates="directors"
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Director(name='{self.name}')>"
 
 
@@ -94,7 +95,7 @@ class CertificationModel(Base):
         back_populates="certification"
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Certification(name='{self.name}')>"
 
 
@@ -111,7 +112,7 @@ class MovieModel(Base):
     meta_score: Mapped[float] = mapped_column(nullable=True)
     gross: Mapped[float] = mapped_column(nullable=True)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    price: Mapped[float] = mapped_column(DECIMAL(10,2), nullable=False)
+    price: Mapped[float] = mapped_column(DECIMAL(10, 2), nullable=False)
     certification_id: Mapped[int] = mapped_column(
         ForeignKey("certifications.id", ondelete="CASCADE"),
         nullable=False
@@ -121,5 +122,5 @@ class MovieModel(Base):
         UniqueConstraint("name", "year", "time", name="unique_movie_name_year_time"),
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Movie(name={self.name!r}, year={self.year}, imdb={self.imdb})>"
