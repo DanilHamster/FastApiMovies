@@ -12,6 +12,7 @@ class OrderStatusEnum(str, enum.Enum):
     PAID = "paid"
     CANCELED = "canceled"
 
+
 class OrderModel(Base):
     __tablename__ = "orders"
 
