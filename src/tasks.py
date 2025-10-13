@@ -1,6 +1,7 @@
-from celery import shared_task
+from celery_conf import celery_app
 
 """Example"""
-# @shared_task
-# def notify_user():
-#     print(f"🔔 Уведомление отправлено пользователю")
+@celery_app.task(name="notify")
+def notify_user():
+    print("🔔 Notify")
+
