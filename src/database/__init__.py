@@ -1,5 +1,14 @@
 import os
 
+from database.models.accounts import (
+    ActivationTokenModel,
+    PasswordResetTokenModel,
+    RefreshTokenModel,
+    UserGroupEnum,
+    UserGroupModel,
+    UserModel,
+    UserProfileModel,
+)
 from database.models.base import Base
 from database.session_sqlite import reset_sqlite_database as reset_database
 from database.validators import accounts as accounts_validators
