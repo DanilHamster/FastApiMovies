@@ -3,6 +3,7 @@ import os
 from database.models.base import Base
 from database.session_sqlite import reset_sqlite_database as reset_database
 from database.validators import accounts as accounts_validators
+from database.validators import accounts as validators
 
 environment = os.getenv("ENVIRONMENT", "developing")
 

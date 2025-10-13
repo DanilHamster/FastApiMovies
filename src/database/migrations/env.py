@@ -9,6 +9,7 @@ sys.path.append(str(BASE_DIR))
 
 from database import Base
 from database.session_postgresql import sync_postgresql_engine
+from database.models import accounts
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
