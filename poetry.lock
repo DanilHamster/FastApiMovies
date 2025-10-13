@@ -985,6 +985,18 @@ dnspython = ">=2.0.0"
 idna = ">=2.0.0"
 
 [[package]]
+name = "exc"
+version = "0.92"
+description = "Easy on-the-fly exception subclassing."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "exc-0.92-py3-none-any.whl", hash = "sha256:6c1ed6a18ec2d8654449fac103887300cacca4ef1546bc7b26f417ee6a55f8af"},
+    {file = "exc-0.92.tar.gz", hash = "sha256:159dbeafa804f36070dd06d2ff3bfeed4f9a1a6619595c02a6b1e0cf90f440f5"},
+]
+
+[[package]]
 name = "exceptiongroup"
 version = "1.3.0"
 description = "Backport of PEP 654 (exception groups)"
@@ -3509,4 +3521,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "19da51a8f39da1caf8a13786d9ce26b29f84628051c811beac65fcd0ae35b62f"
+content-hash = "49b850d473c1bcb84ebc1b8fc0509054aa43bd7e2a0442a0018b0116e457761e"
