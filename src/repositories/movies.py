@@ -43,7 +43,7 @@ class MovieRepository:
                 joinedload(Movie.directors),
             )
         )
-        movies = result.scalars().all()
+        movies = list(result.scalars().all())  # Explicitly convert to List[Movie]
         return movies, total_count
 
     async def get_by_id(self, movie_id: int) -> Movie | None:
