@@ -60,7 +60,7 @@ jobs:
 
       - name: Run movies tests
         run: |
-          poetry run pytest src/tests/test_integration/movies_tests
+          poetry run pytest src/test/test_integration/movies_tests
 
   test-users:
     runs-on: ubuntu-latest
@@ -82,7 +82,7 @@ jobs:
 
       - name: Run users tests
         run: |
-          poetry run pytest src/tests/test_integration/accounts_tests
+          poetry run pytest src/test/test_integration/accounts_tests
 
   test-payments:
     runs-on: ubuntu-latest
@@ -104,7 +104,7 @@ jobs:
 
       - name: Run payment tests
         run: |
-          poetry run pytest src/tests/test_integration/payments_tests
+          poetry run pytest src/test/test_integration/payments_tests
 
   test-orders:
     runs-on: ubuntu-latest
@@ -126,7 +126,7 @@ jobs:
 
       - name: Run payment tests
         run: |
-          poetry run pytest src/tests/test_integration/orders_tests
+          poetry run pytest src/test/test_integration/orders_tests
 
   test-shopping-cart:
     runs-on: ubuntu-latest
@@ -148,7 +148,7 @@ jobs:
 
       - name: Run payment tests
         run: |
-          poetry run pytest src/tests/test_integration/shopping_cart_tests
+          poetry run pytest src/test/test_integration/shopping_cart_tests
 
 #  test-e2e:
 #    runs-on: ubuntu-latest
