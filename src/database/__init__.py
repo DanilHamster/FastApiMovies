@@ -17,7 +17,11 @@ from database.models.movies import (
     CertificationModel,
     MovieModel,
 )
-
+from database.models.payments import (
+    PaymentStatus,
+    Payment,
+    PaymentItem,
+)
 from database.models.orders import OrderItemModel, OrderModel
 
 from database.models.shopping_cart import CartModel, CartItemModel
