@@ -41,7 +41,7 @@ class MovieRepository:
                 joinedload(MovieModel.directors),
             )
         )
-        movies = list(result.scalars().all())
+        movies = list(result.unique().scalars().all())
         return movies, total_count
 
     async def get_by_id(self, movie_id: int) -> MovieModel | None:
@@ -59,16 +59,16 @@ class MovieRepository:
 
     async def create(self, movie_data: MovieCreate) -> MovieModel:
         genre_objs = [
-            await self.get_or_create(GenreModel, id=genre_id)
-            for genre_id in movie_data.genre_ids
+            await self.get_or_create(GenreModel, name=genre_name)
+            for genre_name in movie_data.genres
         ]
         star_objs = [
-            await self.get_or_create(StarModel, id=star_id)
-            for star_id in movie_data.star_ids
+            await self.get_or_create(StarModel, name=star_name)
+            for star_name in movie_data.stars
         ]
         director_objs = [
-            await self.get_or_create(DirectorModel, id=director_id)
-            for director_id in movie_data.director_ids
+            await self.get_or_create(DirectorModel, name=director_name)
+            for director_name in movie_data.directors
         ]
 
         new_movie = MovieModel(

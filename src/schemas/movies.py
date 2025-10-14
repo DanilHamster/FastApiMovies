@@ -76,9 +76,9 @@ class MovieUpdate(BaseModel):
     description: Optional[str] = Field(None, max_length=5000)
     price: Optional[float] = Field(None, ge=0.0)
     certification_id: Optional[int] = Field(None, ge=1)
-    genre_ids: Optional[List[int]] = Field(default_factory=list, min_length=0)
-    star_ids: Optional[List[int]] = Field(default_factory=list, min_length=0)
-    director_ids: Optional[List[int]] = Field(default_factory=list, min_length=0)
+    genres: Optional[List[int]] = Field(default_factory=list, min_length=0)
+    stars: Optional[List[int]] = Field(default_factory=list, min_length=0)
+    directors: Optional[List[int]] = Field(default_factory=list, min_length=0)
 
     model_config = {"from_attributes": True}
 
