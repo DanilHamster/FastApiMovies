@@ -16,7 +16,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
-from database import Base, validators
+from database import Base
+from database.validators.accounts import validate_email, validate_password_strength
 from security import generate_secure_token, hash_password, verify_password
 
 
@@ -105,6 +106,18 @@ class UserModel(Base):
         "UserProfileModel", back_populates="user", cascade="all, delete-orphan"
     )
 
+    payments: Mapped[list["Payment"]] = relationship(
+        "Payment", back_populates="user"
+    )
+
+    orders: Mapped[list["OrderModel"]] = relationship(
+        "OrderModel", back_populates="user"
+    )
+
+    cart: Mapped["CartModel"] = relationship(
+        "CartModel", back_populates="user", uselist=False
+    )
+
     def __repr__(self) -> str:
         return f"<UserModel(id={self.id}, email={self.email}, is_active={self.is_active})>"
 
@@ -136,7 +149,7 @@ class UserModel(Base):
         """
         Set the user's password after validating its strength and hashing it.
         """
-        validators.validate_password_strength(raw_password)
+        validate_password_strength(raw_password)
         self._hashed_password = hash_password(raw_password)
 
     def verify_password(self, raw_password: str) -> bool:
@@ -147,7 +160,7 @@ class UserModel(Base):
 
     @validates("email")
     def validate_email(self, key: str, value: str) -> str:
-        return validators.validate_email(value.lower())
+        return validate_email(value.lower())
 
 
 class UserProfileModel(Base):
