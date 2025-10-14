@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+
 from routes.movies import router as movies_router
 
 from config.settings import API_VERSION_PREFIX
