@@ -16,8 +16,6 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
-
-
 if TYPE_CHECKING:
     from src.database.models.accounts import UserModel
     from src.database.models.orders import OrderModel
