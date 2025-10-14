@@ -47,8 +47,7 @@ class GenreModel(Base):
 
     movies: Mapped[list["MovieModel"]] = relationship(
         "MovieModel",
-        secondary=MoviesGenresModel,
-        back_populates="genres"
+        secondary=MoviesGenresModel
     )
 
     def __repr__(self) -> str:
@@ -62,8 +61,7 @@ class StarModel(Base):
     name: Mapped[str] = mapped_column(unique=True, nullable=False)
     movies: Mapped[list["MovieModel"]] = relationship(
         "MovieModel",
-        secondary=MovieStarsModel,
-        back_populates="stars"
+        secondary=MovieStarsModel
     )
 
     def __repr__(self) -> str:
@@ -77,8 +75,7 @@ class DirectorModel(Base):
     name: Mapped[str] = mapped_column(unique=True, nullable=False)
     movies: Mapped[list["MovieModel"]] = relationship(
         "MovieModel",
-        secondary=MovieDirectorsModel,
-        back_populates="directors"
+        secondary=MovieDirectorsModel
     )
 
     def __repr__(self) -> str:
@@ -92,7 +89,8 @@ class CertificationModel(Base):
     name: Mapped[str] = mapped_column(unique=True, nullable=False)
     movies: Mapped[list["MovieModel"]] = relationship(
         "MovieModel",
-        back_populates="certification"
+        back_populates="certification",
+        passive_deletes=True
     )
 
     def __repr__(self) -> str:
@@ -116,6 +114,41 @@ class MovieModel(Base):
     certification_id: Mapped[int] = mapped_column(
         ForeignKey("certifications.id", ondelete="CASCADE"),
         nullable=False
+    )
+
+    genres: Mapped[list["GenreModel"]] = relationship(
+        "GenreModel",
+        secondary=MoviesGenresModel,
+        back_populates="movies",
+        lazy="selectin"
+    )
+
+    stars: Mapped[list["StarModel"]] = relationship(
+        "StarModel",
+        secondary=MovieStarsModel,
+        back_populates="movies",
+        lazy="selectin"
+    )
+
+    directors: Mapped[list["DirectorModel"]] = relationship(
+        "DirectorModel",
+        secondary=MovieDirectorsModel,
+        back_populates="movies",
+        lazy="selectin"
+    )
+
+    certification: Mapped["CertificationModel"] = relationship(
+        "CertificationModel",
+        back_populates="movies",
+        passive_deletes=True
+    )
+
+    order_items: Mapped[list["OrderItemModel"]] = relationship(
+        "OrderItemModel", back_populates="movie"
+    )
+
+    cart_items: Mapped[list["CartItemModel"]] = relationship(
+        "CartItemModel", back_populates="movie"
     )
 
     __table_args__ = (
