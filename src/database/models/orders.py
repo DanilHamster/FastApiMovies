@@ -39,6 +39,11 @@ class OrderModel(Base):
         cascade="all, delete-orphan",
     )
 
+    # ✅ додай це:
+    payments: Mapped[list["Payment"]] = relationship(
+        "Payment", back_populates="order"
+    )
+
     def __repr__(self) -> str:
         return (
             f"<OrderModel(id={self.id}, user_id={self.user_id}, "
@@ -63,6 +68,9 @@ class OrderItemModel(Base):
     order = relationship("OrderModel", back_populates="items")
     movie = relationship("MovieModel", back_populates="order_items")
 
+    payment_items: Mapped[list["PaymentItem"]] = relationship(
+        "PaymentItem", back_populates="order_item"
+    )
     def __repr__(self) -> str:
         return (
             f"<OrderItemModel(id={self.id}, order_id={self.order_id}, "
