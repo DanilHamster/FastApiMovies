@@ -1,5 +1,6 @@
 from typing import Any, List, Tuple, Type
 
+from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -58,6 +59,14 @@ class MovieRepository:
         return result.unique().scalar_one_or_none()
 
     async def create(self, movie_data: MovieCreate) -> MovieModel:
+        movie_to_search = await self.session.execute(select(MovieModel).where(MovieModel.name == movie_data.name, MovieModel.year == movie_data.year, MovieModel.time == movie_data.time))
+        movie = movie_to_search.scalar_one_or_none()
+        if movie:
+            raise HTTPException(
+                status_code=409,
+                detail="Such a movie already exists"
+            )
+
         genre_objs = [
             await self.get_or_create(GenreModel, name=genre_name)
             for genre_name in movie_data.genres
@@ -100,25 +109,25 @@ class MovieRepository:
 
         update_dict = movie_data.model_dump(exclude_unset=True)
 
-        if "genre_ids" in update_dict:
-            genre_ids = update_dict.pop("genre_ids")
+        if "genres" in update_dict:
+            genre_ids = update_dict.pop("genres")
             movie.genres = [
-                await self.get_or_create(GenreModel, id=genre_id)
-                for genre_id in genre_ids
+                await self.get_or_create(GenreModel, name=genre_name)
+                for genre_name in genre_ids
             ]
 
-        if "star_ids" in update_dict:
-            star_ids = update_dict.pop("star_ids")
+        if "stars" in update_dict:
+            star_ids = update_dict.pop("stars")
             movie.stars = [
-                await self.get_or_create(StarModel, id=star_id)
-                for star_id in star_ids
+                await self.get_or_create(StarModel, name=star_name)
+                for star_name in star_ids
             ]
 
-        if "director_ids" in update_dict:
-            director_ids = update_dict.pop("director_ids")
+        if "directors" in update_dict:
+            director_ids = update_dict.pop("directors")
             movie.directors = [
-                await self.get_or_create(DirectorModel, id=director_id)
-                for director_id in director_ids
+                await self.get_or_create(DirectorModel, name=director_name)
+                for director_name in director_ids
             ]
 
         for key, value in update_dict.items():
