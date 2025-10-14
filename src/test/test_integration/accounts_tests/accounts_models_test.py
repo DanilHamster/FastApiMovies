@@ -1,18 +1,19 @@
 import uuid
-import pytest
 from datetime import datetime
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+
+import pytest
 from sqlalchemy import delete
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 from database import (
-    Base,
-    UserGroupModel,
-    UserGroupEnum,
-    UserModel,
     ActivationTokenModel,
+    Base,
     PasswordResetTokenModel,
-    RefreshTokenModel
+    RefreshTokenModel,
+    UserGroupEnum,
+    UserGroupModel,
+    UserModel,
 )
 
 DATABASE_URL = "sqlite+aiosqlite:///:memory:"

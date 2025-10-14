@@ -2,10 +2,10 @@ from uuid import UUID
 
 import pytest
 from sqlalchemy.exc import IntegrityError
-
-from database import CertificationModel, DirectorModel, GenreModel, MovieModel, StarModel, Base
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+
+from database import Base, CertificationModel, DirectorModel, GenreModel, MovieModel, StarModel
 
 DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 

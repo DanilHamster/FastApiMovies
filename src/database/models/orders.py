@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import DECIMAL, DateTime, Enum, ForeignKey, Integer, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database import Base, UserModel
+from database import Base
 
 
 class OrderStatusEnum(str, enum.Enum):
@@ -70,6 +70,7 @@ class OrderItemModel(Base):
     payment_items: Mapped[list["PaymentItem"]] = relationship(
         "PaymentItem", back_populates="order_item"
     )
+
     def __repr__(self) -> str:
         return (
             f"<OrderItemModel(id={self.id}, order_id={self.order_id}, "

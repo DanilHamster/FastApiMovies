@@ -1,13 +1,10 @@
 import pytest
-
-
-from database import CartModel, CartItemModel, Base
-from database.models.accounts import UserModel
-from database.models.movies import MovieModel, CertificationModel
-
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
+from database import Base, CartItemModel, CartModel
+from database.models.accounts import UserModel
+from database.models.movies import CertificationModel, MovieModel
 
 DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -25,6 +22,7 @@ async def async_session():
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
 
 @pytest.mark.asyncio
 async def test_create_cart_with_items(async_session):

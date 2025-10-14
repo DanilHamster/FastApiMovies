@@ -1,14 +1,14 @@
-import pytest
 from decimal import Decimal
+
+import pytest
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 from database import Base
 from database.models.accounts import UserModel
-from database.models.movies import MovieModel, CertificationModel
-from database.models.orders import OrderModel, OrderItemModel
+from database.models.movies import CertificationModel, MovieModel
+from database.models.orders import OrderItemModel, OrderModel
 from database.models.payments import Payment, PaymentItem
-
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
 
 DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -26,6 +26,7 @@ async def async_session():
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
 
 @pytest.mark.asyncio
 async def test_create_payment_with_items(async_session):
