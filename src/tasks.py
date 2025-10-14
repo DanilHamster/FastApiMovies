@@ -1,13 +1,11 @@
 from datetime import datetime, timezone
 
 from sqlalchemy import select
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from celery_conf import celery_app
 from database.models.accounts import ActivationTokenModel
 from database.session_postgresql import sync_postgresql_engine
-
-from sqlalchemy.orm import Session
 
 SyncPostgresqlSessionLocal = sessionmaker(
     bind=sync_postgresql_engine,
@@ -19,7 +17,7 @@ SyncPostgresqlSessionLocal = sessionmaker(
 
 
 @celery_app.task(name="notify")
-def task_for_clean_tokens():
+def task_for_clean_tokens() -> None:
     print("Clear Start")
     with SyncPostgresqlSessionLocal() as db:
         now_utc = datetime.now(timezone.utc)
