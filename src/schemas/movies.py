@@ -1,101 +1,90 @@
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class GenreBase(BaseModel):
-    name: str
+    name: str = Field(max_length=255)
+
+    model_config = {"from_attributes": True}
 
 
 class GenreResponse(GenreBase):
     id: int
 
-    class Config:
-        from_attributes = True
-
 
 class StarBase(BaseModel):
-    name: str
+    name: str = Field(max_length=255)
+
+    model_config = {"from_attributes": True}
 
 
 class StarResponse(StarBase):
     id: int
 
-    class Config:
-        from_attributes = True
-
 
 class DirectorBase(BaseModel):
-    name: str
+    name: str = Field(max_length=255)
+
+    model_config = {"from_attributes": True}
 
 
 class DirectorResponse(DirectorBase):
     id: int
 
-    class Config:
-        from_attributes = True
-
 
 class CertificationBase(BaseModel):
-    name: str
+    name: str = Field(max_length=255)
+
+    model_config = {"from_attributes": True}
 
 
 class CertificationResponse(CertificationBase):
     id: int
 
-    class Config:
-        from_attributes = True
+
+class MovieBase(BaseModel):
+    name: str = Field(max_length=255)
+    year: int = Field(ge=1888, le=2100)
+    time: int = Field(ge=1)
+    imdb: float = Field(ge=0.0, le=10.0)
+    votes: int = Field(ge=0)
+    meta_score: Optional[float] = Field(None, ge=0.0, le=100.0)
+    gross: Optional[float] = Field(None, ge=0.0)
+    description: str = Field(max_length=5000)
+    price: float = Field(ge=0.0)
+    certification_id: int = Field(ge=1)
+
+    model_config = {"from_attributes": True}
 
 
-class MovieCreate(BaseModel):
-    name: str
-    year: int
-    time: int
-    imdb: float
-    votes: int
-    meta_score: Optional[float] = None
-    gross: Optional[float] = None
-    description: str
-    price: float
-    certification_id: int
-    genre_ids: list[int] = []
-    star_ids: list[int] = []
-    director_ids: list[int] = []
+class MovieCreate(MovieBase):
+    genre_ids: List[int] = Field(default_factory=list, min_items=0)
+    star_ids: List[int] = Field(default_factory=list, min_items=0)
+    director_ids: List[int] = Field(default_factory=list, min_items=0)
 
 
 class MovieUpdate(BaseModel):
-    name: Optional[str] = None
-    year: Optional[int] = None
-    time: Optional[int] = None
-    imdb: Optional[float] = None
-    votes: Optional[int] = None
-    meta_score: Optional[float] = None
-    gross: Optional[float] = None
-    description: Optional[str] = None
-    price: Optional[float] = None
-    certification_id: Optional[int] = None
-    genre_ids: Optional[list[int]] = None
-    star_ids: Optional[list[int]] = None
-    director_ids: Optional[list[int]] = None
+    name: Optional[str] = Field(None, max_length=255)
+    year: Optional[int] = Field(None, ge=1888, le=2100)
+    time: Optional[int] = Field(None, ge=1)
+    imdb: Optional[float] = Field(None, ge=0.0, le=10.0)
+    votes: Optional[int] = Field(None, ge=0)
+    meta_score: Optional[float] = Field(None, ge=0.0, le=100.0)
+    gross: Optional[float] = Field(None, ge=0.0)
+    description: Optional[str] = Field(None, max_length=5000)
+    price: Optional[float] = Field(None, ge=0.0)
+    certification_id: Optional[int] = Field(None, ge=1)
+    genre_ids: Optional[List[int]] = Field(None, min_items=0)
+    star_ids: Optional[List[int]] = Field(None, min_items=0)
+    director_ids: Optional[List[int]] = Field(None, min_items=0)
+
+    model_config = {"from_attributes": True}
 
 
-class MovieResponse(BaseModel):
+class MovieResponse(MovieBase):
     id: int
     uuid: UUID
-    name: str
-    year: int
-    time: int
-    imdb: float
-    votes: int
-    meta_score: Optional[float]
-    gross: Optional[float]
-    description: str
-    price: float
-    certification_id: int
-    genres: list[GenreResponse] = []
-    stars: list[StarResponse] = []
-    directors: list[DirectorResponse] = []
-
-    class Config:
-        from_attributes = True
+    genres: List[GenreResponse] = Field(default_factory=list)
+    stars: List[StarResponse] = Field(default_factory=list)
+    directors: List[DirectorResponse] = Field(default_factory=list)
