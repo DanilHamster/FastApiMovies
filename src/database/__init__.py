@@ -17,6 +17,11 @@ from database.models.movies import (
     CertificationModel,
     MovieModel,
 )
+
+from database.models.orders import OrderItemModel, OrderModel
+
+from database.models.shopping_cart import CartModel, CartItemModel
+
 from database.session_sqlite import reset_sqlite_database as reset_database
 from database.validators import accounts as validators
 
