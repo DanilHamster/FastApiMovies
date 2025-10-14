@@ -82,5 +82,5 @@ class PaymentItem(Base):
         "Payment", back_populates="items"
     )
     order_item: Mapped["OrderItemModel"] = relationship(
-        "OrderItem", back_populates="payment_items"
+        "OrderItemModel", back_populates="payment_items"
     )

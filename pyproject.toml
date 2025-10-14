@@ -83,8 +83,9 @@ pretty = true
 exclude = [
     ".venv",
     "venv",
-    "src/tests/",
+    "src/test/",
     "src/database/migrations/",
+    "src/database/models/",
 ]
 
 [tool.isort]
