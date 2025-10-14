@@ -60,7 +60,7 @@ class MovieBase(BaseModel):
 
 
 class MovieCreate(MovieBase):
-    genre_ids: List[int] = Field(default_factory=list, min_length=0) #str
+    genre_ids: List[int] = Field(default_factory=list, min_length=0)
     star_ids: List[int] = Field(default_factory=list, min_length=0)
     director_ids: List[int] = Field(default_factory=list, min_length=0)
 
