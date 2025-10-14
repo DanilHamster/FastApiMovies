@@ -4,10 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from database.models.directors import Director
-from database.models.genres import Genre
-from database.models.movies import Movie
-from database.models.stars import Star
+from database.models.movies import DirectorModel, GenreModel, MovieModel, StarModel
 from schemas.movies import MovieCreate, MovieUpdate
 
 
@@ -26,55 +23,55 @@ class MovieRepository:
         await self.session.flush()
         return new_instance
 
-    async def get_all(self, skip: int = 0, limit: int = 100) -> Tuple[List[Movie], int]:
+    async def get_all(self, skip: int = 0, limit: int = 100) -> Tuple[List[MovieModel], int]:
         count_result = await self.session.execute(
-            select(func.count()).select_from(Movie)
+            select(func.count()).select_from(MovieModel)
         )
         total_count = count_result.scalar() or 0
 
         result = await self.session.execute(
-            select(Movie)
+            select(MovieModel)
             .offset(skip)
             .limit(limit)
-            .order_by(Movie.id.desc())
+            .order_by(MovieModel.id.desc())
             .options(
-                joinedload(Movie.certification),
-                joinedload(Movie.genres),
-                joinedload(Movie.stars),
-                joinedload(Movie.directors),
+                joinedload(MovieModel.certification),
+                joinedload(MovieModel.genres),
+                joinedload(MovieModel.stars),
+                joinedload(MovieModel.directors),
             )
         )
-        movies = list(result.scalars().all())  # Explicitly convert to List[Movie]
+        movies = list(result.scalars().all())
         return movies, total_count
 
-    async def get_by_id(self, movie_id: int) -> Movie | None:
+    async def get_by_id(self, movie_id: int) -> MovieModel | None:
         result = await self.session.execute(
-            select(Movie)
+            select(MovieModel)
             .options(
-                joinedload(Movie.certification),
-                joinedload(Movie.genres),
-                joinedload(Movie.stars),
-                joinedload(Movie.directors),
+                joinedload(MovieModel.certification),
+                joinedload(MovieModel.genres),
+                joinedload(MovieModel.stars),
+                joinedload(MovieModel.directors),
             )
-            .where(Movie.id == movie_id)
+            .where(MovieModel.id == movie_id)
         )
         return result.unique().scalar_one_or_none()
 
-    async def create(self, movie_data: MovieCreate) -> Movie:
+    async def create(self, movie_data: MovieCreate) -> MovieModel:
         genre_objs = [
-            await self.get_or_create(Genre, id=genre_id)
+            await self.get_or_create(GenreModel, id=genre_id)
             for genre_id in movie_data.genre_ids
         ]
         star_objs = [
-            await self.get_or_create(Star, id=star_id)
+            await self.get_or_create(StarModel, id=star_id)
             for star_id in movie_data.star_ids
         ]
         director_objs = [
-            await self.get_or_create(Director, id=director_id)
+            await self.get_or_create(DirectorModel, id=director_id)
             for director_id in movie_data.director_ids
         ]
 
-        new_movie = Movie(
+        new_movie = MovieModel(
             name=movie_data.name,
             year=movie_data.year,
             time=movie_data.time,
@@ -96,7 +93,7 @@ class MovieRepository:
         full_movie = await self.get_by_id(new_movie.id)
         return full_movie
 
-    async def update(self, movie_id: int, movie_data: MovieUpdate) -> Movie | None:
+    async def update(self, movie_id: int, movie_data: MovieUpdate) -> MovieModel | None:
         movie = await self.get_by_id(movie_id)
         if not movie:
             return None
@@ -106,21 +103,21 @@ class MovieRepository:
         if "genre_ids" in update_dict:
             genre_ids = update_dict.pop("genre_ids")
             movie.genres = [
-                await self.get_or_create(Genre, id=genre_id)
+                await self.get_or_create(GenreModel, id=genre_id)
                 for genre_id in genre_ids
             ]
 
         if "star_ids" in update_dict:
             star_ids = update_dict.pop("star_ids")
             movie.stars = [
-                await self.get_or_create(Star, id=star_id)
+                await self.get_or_create(StarModel, id=star_id)
                 for star_id in star_ids
             ]
 
         if "director_ids" in update_dict:
             director_ids = update_dict.pop("director_ids")
             movie.directors = [
-                await self.get_or_create(Director, id=director_id)
+                await self.get_or_create(DirectorModel, id=director_id)
                 for director_id in director_ids
             ]
 
