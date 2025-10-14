@@ -3,5 +3,6 @@ from config.dependencies import (
     get_jwt_auth_manager,
     get_s3_storage_client,
     get_settings,
+    get_current_user,
 )
 from config.settings import BaseAppSettings
