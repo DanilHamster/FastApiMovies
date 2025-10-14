@@ -59,12 +59,19 @@ class MovieRepository:
         return result.unique().scalar_one_or_none()
 
     async def create(self, movie_data: MovieCreate) -> MovieModel:
-        movie_to_search = await self.session.execute(select(MovieModel).where(MovieModel.name == movie_data.name, MovieModel.year == movie_data.year, MovieModel.time == movie_data.time))
+        movie_to_search = await self.session.execute(
+            select(MovieModel).where(
+                MovieModel.name == movie_data.name,
+                MovieModel.year == movie_data.year,
+                MovieModel.time == movie_data.time,
+            )
+        )
         movie = movie_to_search.scalar_one_or_none()
+
         if movie:
             raise HTTPException(
                 status_code=409,
-                detail="Such a movie already exists"
+                detail="Such a movie already exists",
             )
 
         genre_objs = [
