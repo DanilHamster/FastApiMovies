@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Path, Body, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 from math import ceil
 
-from repositories.movies import MovieRepository
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from database.session_sqlite import get_session
-from schemas.movies import MovieCreate, MovieUpdate, MovieListResponse, MovieDetail
+from repositories.movies import MovieRepository
+from schemas.movies import MovieCreate, MovieDetail, MovieListResponse, MovieUpdate
 
 router = APIRouter(prefix="/movies", tags=["Movies"])
 

@@ -1,11 +1,11 @@
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
 
-from database.models.movies import Movie
-from database.models.genres import Genre
-from database.models.stars import Star
 from database.models.directors import Director
+from database.models.genres import Genre
+from database.models.movies import Movie
+from database.models.stars import Star
 from schemas.movies import MovieCreate, MovieUpdate
 
 
