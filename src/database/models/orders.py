@@ -39,7 +39,6 @@ class OrderModel(Base):
         cascade="all, delete-orphan",
     )
 
-    # ✅ додай це:
     payments: Mapped[list["Payment"]] = relationship(
         "Payment", back_populates="order"
     )
