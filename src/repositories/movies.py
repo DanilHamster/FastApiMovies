@@ -1,7 +1,8 @@
+from typing import Any, List, Tuple, Type
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
-from typing import Type, Tuple, Any, List
 
 from database.models.directors import Director
 from database.models.genres import Genre
