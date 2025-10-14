@@ -60,9 +60,9 @@ class MovieBase(BaseModel):
 
 
 class MovieCreate(MovieBase):
-    genre_ids: List[int] = Field(default_factory=list, min_length=0)
-    star_ids: List[int] = Field(default_factory=list, min_length=0)
-    director_ids: List[int] = Field(default_factory=list, min_length=0)
+    genres: List[str] = Field(default_factory=list, min_length=0)
+    stars: List[str] = Field(default_factory=list, min_length=0)
+    directors: List[str] = Field(default_factory=list, min_length=0)
 
 
 class MovieUpdate(BaseModel):
@@ -76,9 +76,9 @@ class MovieUpdate(BaseModel):
     description: Optional[str] = Field(None, max_length=5000)
     price: Optional[float] = Field(None, ge=0.0)
     certification_id: Optional[int] = Field(None, ge=1)
-    genres: Optional[List[int]] = Field(default_factory=list, min_length=0)
-    stars: Optional[List[int]] = Field(default_factory=list, min_length=0)
-    directors: Optional[List[int]] = Field(default_factory=list, min_length=0)
+    genres: Optional[List[str]] = Field(default_factory=list, min_length=0)
+    stars: Optional[List[str]] = Field(default_factory=list, min_length=0)
+    directors: Optional[List[str]] = Field(default_factory=list, min_length=0)
 
     model_config = {"from_attributes": True}
 
