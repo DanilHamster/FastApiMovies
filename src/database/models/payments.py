@@ -3,8 +3,6 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 import enum
 
-from database.models.base import Base
-
 from sqlalchemy import (
     DateTime,
     Enum,
@@ -15,6 +13,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from database.models.base import Base
 
 if TYPE_CHECKING:
     from src.database.models.accounts import UserModel
