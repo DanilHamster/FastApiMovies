@@ -1,21 +1,12 @@
 import os
 
-from fastapi import Depends, Security, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
 
 from config.settings import BaseAppSettings, Settings, TestingSettings
 from notifications import EmailSender, EmailSenderInterface
 from security.interfaces import JWTAuthManagerInterface
 from security.token_manager import JWTAuthManager
 from storages import S3StorageClient, S3StorageInterface
-from database import (
-    get_db,
-    UserModel,
-)
-
-security = HTTPBearer()
 
 
 def get_settings() -> BaseAppSettings:
@@ -35,7 +26,9 @@ def get_settings() -> BaseAppSettings:
     return Settings()
 
 
-def get_jwt_auth_manager(settings: BaseAppSettings = Depends(get_settings)) -> JWTAuthManagerInterface:
+def get_jwt_auth_manager(
+    settings: BaseAppSettings = Depends(get_settings),
+) -> JWTAuthManagerInterface:
     """
     Create and return a JWT authentication manager instance.
 
@@ -54,12 +47,12 @@ def get_jwt_auth_manager(settings: BaseAppSettings = Depends(get_settings)) -> J
     return JWTAuthManager(
         secret_key_access=settings.SECRET_KEY_ACCESS,
         secret_key_refresh=settings.SECRET_KEY_REFRESH,
-        algorithm=settings.JWT_SIGNING_ALGORITHM
+        algorithm=settings.JWT_SIGNING_ALGORITHM,
     )
 
 
 def get_accounts_email_notificator(
-    settings: BaseAppSettings = Depends(get_settings)
+    settings: BaseAppSettings = Depends(get_settings),
 ) -> EmailSenderInterface:
     """
     Retrieve an instance of the EmailSenderInterface configured with the application settings.
@@ -85,12 +78,12 @@ def get_accounts_email_notificator(
         activation_email_template_name=settings.ACTIVATION_EMAIL_TEMPLATE_NAME,
         activation_complete_email_template_name=settings.ACTIVATION_COMPLETE_EMAIL_TEMPLATE_NAME,
         password_email_template_name=settings.PASSWORD_RESET_TEMPLATE_NAME,
-        password_complete_email_template_name=settings.PASSWORD_RESET_COMPLETE_TEMPLATE_NAME
+        password_complete_email_template_name=settings.PASSWORD_RESET_COMPLETE_TEMPLATE_NAME,
     )
 
 
 def get_s3_storage_client(
-    settings: BaseAppSettings = Depends(get_settings)
+    settings: BaseAppSettings = Depends(get_settings),
 ) -> S3StorageInterface:
     """
     Retrieve an instance of the S3StorageInterface configured with the application settings.
@@ -110,59 +103,5 @@ def get_s3_storage_client(
         endpoint_url=settings.S3_STORAGE_ENDPOINT,
         access_key=settings.S3_STORAGE_ACCESS_KEY,
         secret_key=settings.S3_STORAGE_SECRET_KEY,
-        bucket_name=settings.S3_BUCKET_NAME
+        bucket_name=settings.S3_BUCKET_NAME,
     )
-
-
-async def get_current_user(
-        token: HTTPAuthorizationCredentials = Security(security),
-        db: AsyncSession = Depends(get_db),
-        jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
-) -> UserModel:
-    """
-    Retrieve the current authenticated user based on the JWT access token.
-
-    This function:
-    - Extracts the JWT token from the Authorization header (Bearer token).
-    - Decodes and validates the token using the JWTAuthManager.
-    - Retrieves the user ID from the token payload.
-    - Loads the user from the database.
-    - Ensures the user exists and is active.
-
-    Args:
-        token (HTTPAuthorizationCredentials): The bearer token from the Authorization header.
-        db (AsyncSession): The asynchronous database session.
-        jwt_manager (JWTAuthManagerInterface): JWT manager to decode and validate tokens.
-
-    Returns:
-        UserModel: The authenticated user instance.
-
-    Raises:
-        HTTPException:
-            - 401 Unauthorized if the token is invalid, expired, or the user does not exist or is inactive.
-    """
-    try:
-        payload = jwt_manager.decode_access_token(token.credentials)
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token."
-        )
-
-    user_id = payload.get("user_id")
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token payload."
-        )
-
-    stmt = select(UserModel).filter_by(id=user_id)
-    result = await db.execute(stmt)
-    user = result.scalars().first()
-    if not user or not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found or inactive."
-        )
-
-    return user
