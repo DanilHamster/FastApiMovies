@@ -82,9 +82,30 @@ class MovieUpdate(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class MovieResponse(MovieBase):
+class MovieDetail(MovieBase):
     id: int
     uuid: UUID
     genres: List[GenreResponse] = Field(default_factory=list)
     stars: List[StarResponse] = Field(default_factory=list)
     directors: List[DirectorResponse] = Field(default_factory=list)
+    certification: CertificationResponse
+
+
+class MovieList(BaseModel):
+    id: int
+    name: str
+    year: int
+    imdb: float
+    price: float
+
+    model_config = {"from_attributes": True}
+
+
+class MovieListResponse(BaseModel):
+    items: List[MovieList]
+    total: int
+    page: int
+    per_page: int
+    total_pages: int
+    has_next: bool
+    has_prev: bool
