@@ -25,15 +25,18 @@ DirectorModel,
 CertificationModel,
 MovieModel
 )
-
 from database.models.orders import (
     OrderItemModel,
     OrderModel
 )
-
 from database.models.shopping_cart import (
     CartModel,
     CartItemModel
+)
+from database.models.payments import (
+    PaymentStatus,
+    Payment,
+    PaymentItem,
 )
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
