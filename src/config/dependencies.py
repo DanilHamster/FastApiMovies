@@ -1,12 +1,21 @@
 import os
 
-from fastapi import Depends
+from fastapi import Depends, Security, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.settings import BaseAppSettings, Settings, TestingSettings
 from notifications import EmailSender, EmailSenderInterface
 from security.interfaces import JWTAuthManagerInterface
 from security.token_manager import JWTAuthManager
 from storages import S3StorageClient, S3StorageInterface
+from database import (
+    get_db,
+    UserModel,
+)
+
+security = HTTPBearer()
 
 
 def get_settings() -> BaseAppSettings:
@@ -105,3 +114,57 @@ def get_s3_storage_client(
         secret_key=settings.S3_STORAGE_SECRET_KEY,
         bucket_name=settings.S3_BUCKET_NAME,
     )
+
+
+async def get_current_user(
+        token: HTTPAuthorizationCredentials = Security(security),
+        db: AsyncSession = Depends(get_db),
+        jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
+) -> UserModel:
+    """
+    Retrieve the current authenticated user based on the JWT access token.
+
+    This function:
+    - Extracts the JWT token from the Authorization header (Bearer token).
+    - Decodes and validates the token using the JWTAuthManager.
+    - Retrieves the user ID from the token payload.
+    - Loads the user from the database.
+    - Ensures the user exists and is active.
+
+    Args:
+        token (HTTPAuthorizationCredentials): The bearer token from the Authorization header.
+        db (AsyncSession): The asynchronous database session.
+        jwt_manager (JWTAuthManagerInterface): JWT manager to decode and validate tokens.
+
+    Returns:
+        UserModel: The authenticated user instance.
+
+    Raises:
+        HTTPException:
+            - 401 Unauthorized if the token is invalid, expired, or the user does not exist or is inactive.
+    """
+    try:
+        payload = jwt_manager.decode_access_token(token.credentials)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token."
+        )
+
+    user_id = payload.get("user_id")
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload."
+        )
+
+    stmt = select(UserModel).filter_by(id=user_id)
+    result = await db.execute(stmt)
+    user = result.scalars().first()
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or inactive."
+        )
+
+    return user
