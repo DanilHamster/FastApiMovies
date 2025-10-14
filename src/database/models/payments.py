@@ -1,7 +1,7 @@
+import enum
 from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
-import enum
 
 from sqlalchemy import (
     DateTime,
@@ -16,9 +16,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database.models.base import Base
 
 if TYPE_CHECKING:
-    from src.database.models.accounts import UserModel
-    from src.database.models.orders import OrderModel
-    from src.database.models.orders import OrderItemModel
+    from database.models.accounts import UserModel
+    from database.models.orders import OrderItemModel, OrderModel
 
 
 class PaymentStatus(enum.Enum):
