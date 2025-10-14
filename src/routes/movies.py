@@ -15,7 +15,7 @@ async def list_movies(
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=100),
     session: AsyncSession = Depends(get_session),
-):
+) -> MovieListResponse:
     repo = MovieRepository(session)
     skip = (page - 1) * per_page
     movies, total_count = await repo.get_all(skip=skip, limit=per_page)
@@ -37,7 +37,7 @@ async def list_movies(
 async def read_movie(
     movie_id: int = Path(..., ge=1),
     session: AsyncSession = Depends(get_session),
-):
+) -> MovieDetail:
     repo = MovieRepository(session)
     movie = await repo.get_by_id(movie_id)
     if not movie:
@@ -49,7 +49,7 @@ async def read_movie(
 async def create_new_movie(
     movie: MovieCreate,
     session: AsyncSession = Depends(get_session),
-):
+) -> MovieDetail:
     repo = MovieRepository(session)
     return await repo.create(movie)
 
@@ -59,7 +59,7 @@ async def update_existing_movie(
     movie_id: int = Path(..., ge=1),
     movie_data: MovieUpdate = Body(),
     session: AsyncSession = Depends(get_session),
-):
+) -> MovieDetail:
     repo = MovieRepository(session)
     updated_movie = await repo.update(movie_id, movie_data)
     if not updated_movie:
@@ -71,7 +71,7 @@ async def update_existing_movie(
 async def remove_movie(
     movie_id: int = Path(..., ge=1),
     session: AsyncSession = Depends(get_session),
-):
+) -> None:
     repo = MovieRepository(session)
     deleted = await repo.delete(movie_id)
     if not deleted:

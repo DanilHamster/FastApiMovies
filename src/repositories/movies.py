@@ -1,6 +1,7 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
+from typing import Type, Tuple, Any, List
 
 from database.models.directors import Director
 from database.models.genres import Genre
@@ -13,7 +14,7 @@ class MovieRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_or_create(self, model, **kwargs):
+    async def get_or_create(self, model: Type[Any], **kwargs: Any) -> Any:
         stmt = select(model).filter_by(**kwargs)
         result = await self.session.execute(stmt)
         instance = result.scalar_one_or_none()
@@ -24,11 +25,11 @@ class MovieRepository:
         await self.session.flush()
         return new_instance
 
-    async def get_all(self, skip: int = 0, limit: int = 100) -> tuple[list[Movie], int]:
+    async def get_all(self, skip: int = 0, limit: int = 100) -> Tuple[List[Movie], int]:
         count_result = await self.session.execute(
             select(func.count()).select_from(Movie)
         )
-        total_count = count_result.scalar()
+        total_count = count_result.scalar() or 0
 
         result = await self.session.execute(
             select(Movie)
