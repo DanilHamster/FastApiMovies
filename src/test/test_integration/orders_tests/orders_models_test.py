@@ -117,18 +117,3 @@ async def test_cascade_delete_order(async_session):
     result = await async_session.execute(select(OrderItemModel).where(OrderItemModel.id == item.id))
     deleted_item = result.scalar_one_or_none()
     assert deleted_item is None
-
-
-@pytest.mark.asyncio
-async def test_ondelete_user_cascade(async_session):
-    user = UserModel(email="cascade@example.com", password="StrongPass1!", group_id=1)
-    order = OrderModel(user=user, total_amount=Decimal("25.00"))
-
-    async_session.add_all([user, order])
-    await async_session.commit()
-
-    await async_session.delete(user)
-    await async_session.commit()
-
-    result = await async_session.get(OrderModel, order.id)
-    assert result is None

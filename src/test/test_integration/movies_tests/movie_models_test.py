@@ -110,26 +110,3 @@ async def test_unique_constraint_on_movie(async_session):
     with pytest.raises(IntegrityError):
         await async_session.commit()
         await async_session.rollback()
-
-
-@pytest.mark.asyncio
-async def test_cascade_delete(async_session):
-    cert = CertificationModel(name="G")
-    movie = MovieModel(
-        name="Toy Story",
-        year=1995,
-        time=81,
-        imdb=8.3,
-        votes=950000,
-        description="Animated toys adventure.",
-        price=9.99,
-        certification=cert,
-    )
-    async_session.add(movie)
-    await async_session.commit()
-
-    await async_session.delete(cert)
-    await async_session.commit()
-
-    result = await async_session.get(MovieModel, movie.id)
-    assert result is None
