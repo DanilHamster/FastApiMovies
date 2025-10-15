@@ -122,14 +122,10 @@ class UserModel(Base):
     )
 
     likes = relationship(
-        "LikeModel",
-        back_populates="user",
-        cascade="all, delete-orphan"
+        "LikeModel", back_populates="user", cascade="all, delete-orphan"
     )
     dislikes = relationship(
-        "DislikeModel",
-        back_populates="user",
-        cascade="all, delete-orphan"
+        "DislikeModel", back_populates="user", cascade="all, delete-orphan"
     )
 
     comments: Mapped[list["Comment"]] = relationship(
@@ -137,7 +133,6 @@ class UserModel(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
-
 
     def __repr__(self) -> str:
         return f"<UserModel(id={self.id}, email={self.email}, is_active={self.is_active})>"
