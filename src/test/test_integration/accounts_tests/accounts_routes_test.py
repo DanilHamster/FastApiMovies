@@ -1,14 +1,13 @@
-from unittest.mock import patch, AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
+from database import ActivationTokenModel, Base, UserGroupModel, get_db
 from main import app
-from database import get_db, Base, UserGroupModel, ActivationTokenModel
-
 
 API_PREFIX = "/api/v1/accounts"
 
@@ -47,6 +46,7 @@ def mock_email(monkeypatch):
         fake_send_activation_email
     )
 
+
 @pytest.fixture
 async def client(db_session: AsyncSession) -> AsyncClient:
     app.dependency_overrides[get_db] = lambda: db_session
@@ -55,6 +55,7 @@ async def client(db_session: AsyncSession) -> AsyncClient:
         base_url="http://testserver"
     ) as ac:
         yield ac
+
 
 @pytest.mark.asyncio
 async def test_register_user(client: AsyncClient):

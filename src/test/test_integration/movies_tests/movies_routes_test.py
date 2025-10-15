@@ -1,10 +1,11 @@
 import asyncio
-import pytest
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-from database import Base, MovieModel, get_db, CertificationModel
+import pytest
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from database import Base, CertificationModel, MovieModel, get_db
 from main import app
 
 API_PREFIX = "/api/v1/movies"
@@ -32,7 +33,6 @@ async def prepare_db():
 async def db_session() -> AsyncSession:
     async with AsyncSessionTest() as session:
         yield session
-
 
 
 @pytest.fixture
@@ -127,6 +127,7 @@ async def test_read_movie(client: AsyncClient, db_session: AsyncSession, certifi
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == "Matrix"
+
 
 @pytest.mark.asyncio
 async def test_update_movie(client: AsyncClient, db_session: AsyncSession, certification: CertificationModel):
