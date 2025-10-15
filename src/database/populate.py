@@ -1,5 +1,6 @@
 import asyncio
-from sqlalchemy import insert, select, func
+
+from sqlalchemy import func, insert, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,11 +8,11 @@ from config import get_settings
 from database import get_db_contextmanager
 from database.models.accounts import UserGroupEnum, UserGroupModel, UserModel, UserProfileModel
 from database.models.movies import (
-    GenreModel,
-    StarModel,
-    DirectorModel,
     CertificationModel,
+    DirectorModel,
+    GenreModel,
     MovieModel,
+    StarModel,
 )
 
 
@@ -36,7 +37,8 @@ class DatabaseSeeder:
     async def _seed_users(self) -> None:
         print("➡ Seeding users...")
         result = await self._db_session.execute(select(func.count(UserModel.id)))
-        if result.scalar() > 0:
+        user_count = result.scalar() or 0
+        if user_count > 0:
             print("↩ Users already exist, skipping.")
             return
 
@@ -77,7 +79,7 @@ class DatabaseSeeder:
     async def _seed_movies(self) -> None:
         print("➡ Seeding movies...")
 
-        movie_count = await self._db_session.scalar(select(func.count(MovieModel.id)))
+        movie_count = await self._db_session.scalar(select(func.count(MovieModel.id))) or 0
         if movie_count > 0:
             print("↩ Movies already exist, skipping.")
             return
@@ -148,7 +150,9 @@ class DatabaseSeeder:
                 "votes": 950000,
                 "meta_score": 75,
                 "gross": 352.11,
-                "description": "The story of Frank Abagnale Jr., who successfully conned millions as a pilot and doctor.",
+                "description":
+                    "The story of Frank Abagnale Jr.,"
+                    " who successfully conned millions as a pilot and doctor.",
                 "price": 8.49,
                 "certification": cert_db[1],
                 "genres": [genres_db[1], genres_db[2]],
@@ -194,7 +198,7 @@ class DatabaseSeeder:
 
 
 async def main() -> None:
-    settings = get_settings()
+    _ = get_settings()
     async with get_db_contextmanager() as db_session:
         seeder = DatabaseSeeder(db_session)
         await seeder.seed_all()
