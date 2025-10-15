@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class OrderItemOutSchema(BaseModel):
@@ -17,8 +17,8 @@ class OrderOutSchema(BaseModel):
     created_at: datetime | None = None
     items: list[OrderItemOutSchema]
 
-    model_config = {
-        "json_schema_extra": {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 123,
                 "status": "pending",
@@ -30,7 +30,7 @@ class OrderOutSchema(BaseModel):
                 ],
             }
         }
-    }
+    )
 
 
 class OrderItemMovieSchema(BaseModel):
@@ -50,8 +50,8 @@ class OrderDetailOutSchema(BaseModel):
     created_at: datetime | None = None
     items: list[OrderItemDetailOutSchema]
 
-    model_config = {
-        "json_schema_extra": {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": 321,
                 "status": "paid",
@@ -65,4 +65,4 @@ class OrderDetailOutSchema(BaseModel):
                 ],
             }
         }
-    }
+    )

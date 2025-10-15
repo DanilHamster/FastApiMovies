@@ -18,7 +18,13 @@ from database import (
 from database.models.accounts import UserGroupEnum, UserGroupModel
 from database.models.orders import OrderStatusEnum
 from database.models.payments import Payment, PaymentItem, PaymentStatus
-from schemas.orders import OrderDetailOutSchema, OrderOutSchema
+from schemas.orders import (
+    OrderDetailOutSchema,
+    OrderItemDetailOutSchema,
+    OrderItemMovieSchema,
+    OrderItemOutSchema,
+    OrderOutSchema,
+)
 from security.http import get_token
 from security.interfaces import JWTAuthManagerInterface
 
@@ -68,7 +74,7 @@ async def list_orders(
     ),
     limit: int = Query(20, ge=1, le=100, description="Page size (1-100)"),
     offset: int = Query(0, ge=0, description="Items offset"),
-):
+) -> list[OrderOutSchema]:
     """
     Return all orders belonging to the current user.
     Supports optional filters: status, limit, offset. Sorted by newest first.
@@ -88,30 +94,31 @@ async def list_orders(
         stmt = stmt.where(OrderModel.status == status_filter)
 
     res = await db.execute(stmt)
-    orders: list[OrderModel] = list(res.scalars().unique().all())
+    orders = list(res.scalars().unique().all())
 
-    def serialize_order(o: OrderModel) -> dict:
-        return {
-            "id": o.id,
-            "status": (
-                o.status.value if hasattr(o.status, "value") else str(o.status)
-            ),
-            "total_amount": str(o.total_amount),
-            "created_at": (
-                o.created_at.isoformat()
-                if getattr(o, "created_at", None)
-                else None
-            ),
-            "items": [
-                {
-                    "movie_id": it.movie_id,
-                    "price_at_order": str(it.price_at_order),
-                }
-                for it in o.items
-            ],
-        }
+    result: list[OrderOutSchema] = []
+    for o in orders:
+        items = [
+            OrderItemOutSchema(
+                movie_id=it.movie_id, price_at_order=str(it.price_at_order)
+            )
+            for it in o.items
+        ]
+        result.append(
+            OrderOutSchema(
+                id=o.id,
+                status=(
+                    o.status.value
+                    if hasattr(o.status, "value")
+                    else str(o.status)
+                ),
+                total_amount=str(o.total_amount),
+                created_at=o.created_at,
+                items=items,
+            )
+        )
 
-    return [serialize_order(o) for o in orders]
+    return result
 
 
 @router.post(
@@ -120,7 +127,7 @@ async def list_orders(
 async def create_order(
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> OrderOutSchema:
     """
     Create a new order from the current user's cart with validations:
     - The cart must not be empty.
@@ -172,7 +179,7 @@ async def create_order(
         OrderModel.status == OrderStatusEnum.PENDING,
     )
     pending_orders_res = await db.execute(pending_orders_stmt)
-    pending_orders: list[OrderModel] = list(pending_orders_res.scalars().all())
+    pending_orders = list(pending_orders_res.scalars().all())
 
     if pending_orders:
         pending_order_ids = [o.id for o in pending_orders]
@@ -215,27 +222,23 @@ async def create_order(
     )
     await db.commit()
 
-    return {
-        "id": order.id,
-        "status": (
+    items = [
+        OrderItemOutSchema(
+            movie_id=item.movie_id, price_at_order=str(item.price_at_order)
+        )
+        for item in order.items
+    ]
+    return OrderOutSchema(
+        id=order.id,
+        status=(
             order.status.value
             if hasattr(order.status, "value")
             else str(order.status)
         ),
-        "total_amount": str(order.total_amount),
-        "created_at": (
-            order.created_at.isoformat()
-            if getattr(order, "created_at", None)
-            else None
-        ),
-        "items": [
-            {
-                "movie_id": item.movie_id,
-                "price_at_order": str(item.price_at_order),
-            }
-            for item in order.items
-        ],
-    }
+        total_amount=str(order.total_amount),
+        created_at=order.created_at,
+        items=items,
+    )
 
 
 @router.get(
@@ -247,7 +250,7 @@ async def get_order_details(
     order_id: int,
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> OrderDetailOutSchema:
     """Return detailed view of a specific order. Users see only their orders; admins can see any."""
     group_res = await db.execute(
         select(UserGroupModel.name).where(
@@ -277,30 +280,28 @@ async def get_order_details(
             status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden"
         )
 
-    return {
-        "id": order.id,
-        "status": (
+    items = [
+        OrderItemDetailOutSchema(
+            movie=OrderItemMovieSchema(
+                id=item.movie.id,
+                name=item.movie.name,
+            ),
+            price_at_order=str(item.price_at_order),
+        )
+        for item in order.items
+    ]
+
+    return OrderDetailOutSchema(
+        id=order.id,
+        status=(
             order.status.value
             if hasattr(order.status, "value")
             else str(order.status)
         ),
-        "total_amount": str(order.total_amount),
-        "created_at": (
-            order.created_at.isoformat()
-            if getattr(order, "created_at", None)
-            else None
-        ),
-        "items": [
-            {
-                "movie": {
-                    "id": item.movie.id,
-                    "name": item.movie.name,
-                },
-                "price_at_order": str(item.price_at_order),
-            }
-            for item in order.items
-        ],
-    }
+        total_amount=str(order.total_amount),
+        created_at=order.created_at,
+        items=items,
+    )
 
 
 @router.patch(
@@ -312,8 +313,10 @@ async def cancel_order(
     order_id: int,
     current_user: UserModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
-    """Cancel a pending order. Users can cancel only their own pending orders; admins can cancel any pending order."""
+) -> OrderDetailOutSchema:
+    """Cancel a pending order.
+    Users can cancel only their own pending orders;
+    admins can cancel any pending order."""
     group_res = await db.execute(
         select(UserGroupModel.name).where(
             UserGroupModel.id == current_user.group_id
@@ -353,30 +356,28 @@ async def cancel_order(
     await db.commit()
     await db.refresh(order)
 
-    return {
-        "id": order.id,
-        "status": (
+    items = [
+        OrderItemDetailOutSchema(
+            movie=OrderItemMovieSchema(
+                id=item.movie.id,
+                name=item.movie.name,
+            ),
+            price_at_order=str(item.price_at_order),
+        )
+        for item in order.items
+    ]
+
+    return OrderDetailOutSchema(
+        id=order.id,
+        status=(
             order.status.value
             if hasattr(order.status, "value")
             else str(order.status)
         ),
-        "total_amount": str(order.total_amount),
-        "created_at": (
-            order.created_at.isoformat()
-            if getattr(order, "created_at", None)
-            else None
-        ),
-        "items": [
-            {
-                "movie": {
-                    "id": item.movie.id,
-                    "name": item.movie.name,
-                },
-                "price_at_order": str(item.price_at_order),
-            }
-            for item in order.items
-        ],
-    }
+        total_amount=str(order.total_amount),
+        created_at=order.created_at,
+        items=items,
+    )
 
 
 @admin_router.get(
@@ -397,9 +398,10 @@ async def admin_list_orders(
     ),
     limit: int = Query(20, ge=1, le=100, description="Page size (1-100)"),
     offset: int = Query(0, ge=0, description="Items offset"),
-):
+) -> list[OrderOutSchema]:
     """
-    Admin-only: list all orders with optional filters and pagination. Sorted by newest first.
+    Admin-only: list all orders with optional filters and pagination.
+    Sorted by newest first.
     """
     group_res = await db.execute(
         select(UserGroupModel.name).where(
@@ -434,27 +436,28 @@ async def admin_list_orders(
         stmt = stmt.where(OrderModel.created_at <= date_to)
 
     res = await db.execute(stmt)
-    orders: list[OrderModel] = list(res.scalars().unique().all())
+    orders = list(res.scalars().unique().all())
 
-    def serialize_order(o: OrderModel) -> dict:
-        return {
-            "id": o.id,
-            "status": (
-                o.status.value if hasattr(o.status, "value") else str(o.status)
-            ),
-            "total_amount": str(o.total_amount),
-            "created_at": (
-                o.created_at.isoformat()
-                if getattr(o, "created_at", None)
-                else None
-            ),
-            "items": [
-                {
-                    "movie_id": it.movie_id,
-                    "price_at_order": str(it.price_at_order),
-                }
-                for it in o.items
-            ],
-        }
+    result: list[OrderOutSchema] = []
+    for o in orders:
+        items = [
+            OrderItemOutSchema(
+                movie_id=it.movie_id, price_at_order=str(it.price_at_order)
+            )
+            for it in o.items
+        ]
+        result.append(
+            OrderOutSchema(
+                id=o.id,
+                status=(
+                    o.status.value
+                    if hasattr(o.status, "value")
+                    else str(o.status)
+                ),
+                total_amount=str(o.total_amount),
+                created_at=o.created_at,
+                items=items,
+            )
+        )
 
-    return [serialize_order(o) for o in orders]
+    return result
