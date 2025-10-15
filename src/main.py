@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 
-from routes.movies import router as movies_router
-
 from config.settings import API_VERSION_PREFIX
 from routes import accounts
+from routes.movies import router as movies_router
 
 app = FastAPI(
     title="Movies Api",
