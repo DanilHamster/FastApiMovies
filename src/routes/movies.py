@@ -1,15 +1,19 @@
 from math import ceil
+from typing import Any, List
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Path, Query
 from sqlalchemy import select
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query
 from fastapi_filter import FilterDepends
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from config import get_accounts_email_notificator
-from database import get_db, UserModel
-from database.models.movies import LikeTargetType, DislikeModel, LikeModel, Comment
+from database import MovieModel, UserModel, get_db
+from database.models.movies import Comment, DislikeModel, LikeModel, LikeTargetType
 from notifications import EmailSenderInterface
+from repositories.movies import MovieRepository, notify_comment_like_user
+from schemas.movies import CommentCreate, CommentResponse, MovieCreate, MovieDetail, MovieListResponse, MovieUpdate
 from database import get_db
 from filters.filter_movies import MovieFilter
 from repositories.movies import MovieRepository
@@ -210,8 +214,8 @@ async def like(
         target_type: LikeTargetType,
         db: AsyncSession = Depends(get_db),
         current_user: UserModel = Depends(get_current_user),
-        email_sender: EmailSenderInterface = Depends(
-            get_accounts_email_notificator)
+        email_sender: EmailSenderInterface = Depends(get_accounts_email_notificator)
+
 ) -> dict:
     if target_type == LikeTargetType.MOVIE:
         check_dislike = await db.execute(
@@ -233,7 +237,7 @@ async def like(
     if existing_like:
         await db.delete(existing_like)
         await db.commit()
-        return {"message": f"Removed like"}
+        return {"message": "Removed like"}
 
     new_like = LikeModel(
         user_id=current_user.id,
@@ -244,17 +248,9 @@ async def like(
     await db.commit()
 
     if target_type == LikeTargetType.COMMENT:
-        comment = await db.execute(select(Comment).where(Comment.id == target_id))
-        comment_db = comment.scalar_one_or_none()
-        user = await db.execute(select(UserModel).where(UserModel.id == comment_db.user_id))
-        db_user = user.scalar_one_or_none()
+        await notify_comment_like_user(db, background_tasks, target_id, email_sender)
 
-        background_tasks.add_task(
-            email_sender.send_comments_notify_like,
-            str(db_user.email)
-        )
-
-    return {"message": f"Liked"}
+    return {"message": "Liked"}
 
 
 @router.post("/dislike/")
@@ -277,7 +273,7 @@ async def dislike(
     if db_check_like:
         await db.delete(db_check_like)
         await db.commit()
-        return {"message": f"Removed dislike"}
+        return {"message": "Removed dislike"}
 
     new_dislike = DislikeModel(
         user_id=current_user.id,
@@ -286,43 +282,12 @@ async def dislike(
     db.add(new_dislike)
     await db.commit()
 
-    return {"message": f"Disliked"}
-
-
-@router.post("/dislike/")
-async def dislike(
-        movie_id: int,
-        db: AsyncSession = Depends(get_db),
-        current_user: UserModel = Depends(get_current_user),
-) -> dict:
-
-    check_like = await db.execute(
-        select(LikeModel).where(LikeModel.target_id == movie_id, LikeModel.user_id == current_user.id))
-    db_check_like = check_like.scalar_one_or_none()
-    if db_check_like:
-        await db.delete(db_check_like)
-        await db.commit()
-
-    check_like = await db.execute(
-        select(DislikeModel).where(DislikeModel.movie_id == movie_id, DislikeModel.user_id == current_user.id))
-    db_check_like = check_like.scalar_one_or_none()
-    if db_check_like:
-        await db.delete(db_check_like)
-        await db.commit()
-        return {"message": f"Removed dislike"}
-
-    new_dislike = DislikeModel(
-        user_id=current_user.id,
-        movie_id=movie_id,
-    )
-    db.add(new_dislike)
-    await db.commit()
-
-    return {"message": f"Disliked"}
+    return {"message": "Disliked"}
 
 
 @router.post("/comment/")
 async def comment(
+        data: CommentCreate,
         background_tasks: BackgroundTasks,
         target_id: int,
         target_type: LikeTargetType,
@@ -334,13 +299,16 @@ async def comment(
 
     new_comment = Comment(
         user_id=current_user.id,
-        text="sadadasda",
+        text=data.text,
         target_id=target_id,
         target_type=target_type
 
     )
 
+    if target_type == LikeTargetType.COMMENT:
+        await notify_comment_like_user(db, background_tasks, target_id, email_sender)
+
     db.add(new_comment)
     await db.commit()
 
-    return {"message": f"Comment"}
+    return {"message": "Comment complete"}
