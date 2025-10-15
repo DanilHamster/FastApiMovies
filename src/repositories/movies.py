@@ -5,7 +5,12 @@ from sqlalchemy import func, select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from database.models.movies import DirectorModel, GenreModel, MovieModel, StarModel
+from database.models.movies import (
+    DirectorModel,
+    GenreModel,
+    MovieModel,
+    StarModel,
+)
 from schemas.movies import MovieCreate, MovieUpdate
 from filters.filter_movies import MovieFilter
 
@@ -25,7 +30,9 @@ class MovieRepository:
         await self.session.flush()
         return new_instance
 
-    async def get_all(self, skip: int = 0, limit: int = 100) -> Tuple[List[MovieModel], int]:
+    async def get_all(
+        self, skip: int = 0, limit: int = 100
+    ) -> Tuple[List[MovieModel], int]:
         count_result = await self.session.execute(
             select(func.count()).select_from(MovieModel)
         )
@@ -69,11 +76,22 @@ class MovieRepository:
         )
         movie = movie_to_search.scalar_one_or_none()
         if movie:
-            raise HTTPException(status_code=409, detail="Such a movie already exists")
+            raise HTTPException(
+                status_code=409, detail="Such a movie already exists"
+            )
 
-        genre_objs = [await self.get_or_create(GenreModel, name=g) for g in movie_data.genres]
-        star_objs = [await self.get_or_create(StarModel, name=s) for s in movie_data.stars]
-        director_objs = [await self.get_or_create(DirectorModel, name=d) for d in movie_data.directors]
+        genre_objs = [
+            await self.get_or_create(GenreModel, name=g)
+            for g in movie_data.genres
+        ]
+        star_objs = [
+            await self.get_or_create(StarModel, name=s)
+            for s in movie_data.stars
+        ]
+        director_objs = [
+            await self.get_or_create(DirectorModel, name=d)
+            for d in movie_data.directors
+        ]
 
         new_movie = MovieModel(
             name=movie_data.name,
@@ -95,7 +113,9 @@ class MovieRepository:
         await self.session.refresh(new_movie)
         return await self.get_by_id(new_movie.id)
 
-    async def update(self, movie_id: int, movie_data: MovieUpdate) -> MovieModel | None:
+    async def update(
+        self, movie_id: int, movie_data: MovieUpdate
+    ) -> MovieModel | None:
         movie = await self.get_by_id(movie_id)
         if not movie:
             return None
@@ -104,15 +124,23 @@ class MovieRepository:
 
         if "genres" in update_dict:
             genre_names = update_dict.pop("genres")
-            movie.genres = [await self.get_or_create(GenreModel, name=g) for g in genre_names]
+            movie.genres = [
+                await self.get_or_create(GenreModel, name=g)
+                for g in genre_names
+            ]
 
         if "stars" in update_dict:
             star_names = update_dict.pop("stars")
-            movie.stars = [await self.get_or_create(StarModel, name=s) for s in star_names]
+            movie.stars = [
+                await self.get_or_create(StarModel, name=s) for s in star_names
+            ]
 
         if "directors" in update_dict:
             director_names = update_dict.pop("directors")
-            movie.directors = [await self.get_or_create(DirectorModel, name=d) for d in director_names]
+            movie.directors = [
+                await self.get_or_create(DirectorModel, name=d)
+                for d in director_names
+            ]
 
         for key, value in update_dict.items():
             setattr(movie, key, value)
@@ -129,18 +157,30 @@ class MovieRepository:
         await self.session.commit()
         return True
 
-    async def filter_movies(self, filters: MovieFilter, skip: int = 0, limit: int = 10) -> Tuple[List[MovieModel], int]:
+    async def filter_movies(
+        self, filters: MovieFilter, skip: int = 0, limit: int = 10
+    ) -> Tuple[List[MovieModel], int]:
         query = select(MovieModel).distinct()
-        query = query.outerjoin(MovieModel.directors).outerjoin(MovieModel.stars)
+        query = query.outerjoin(MovieModel.directors).outerjoin(
+            MovieModel.stars
+        )
         search_conditions = []
         if filters.name__ilike:
-            search_conditions.append(MovieModel.name.ilike(f"%{filters.name__ilike}%"))
+            search_conditions.append(
+                MovieModel.name.ilike(f"%{filters.name__ilike}%")
+            )
         if filters.description__ilike:
-            search_conditions.append(MovieModel.description.ilike(f"%{filters.description__ilike}%"))
+            search_conditions.append(
+                MovieModel.description.ilike(f"%{filters.description__ilike}%")
+            )
         if filters.director_name__ilike:
-            search_conditions.append(DirectorModel.name.ilike(f"%{filters.director_name__ilike}%"))
+            search_conditions.append(
+                DirectorModel.name.ilike(f"%{filters.director_name__ilike}%")
+            )
         if filters.star_name__ilike:
-            search_conditions.append(StarModel.name.ilike(f"%{filters.star_name__ilike}%"))
+            search_conditions.append(
+                StarModel.name.ilike(f"%{filters.star_name__ilike}%")
+            )
 
         if search_conditions:
             query = query.filter(or_(*search_conditions))
@@ -157,22 +197,34 @@ class MovieRepository:
         if filters.price__lte is not None:
             query = query.filter(MovieModel.price <= filters.price__lte)
         if filters.certification_id is not None:
-            query = query.filter(MovieModel.certification_id == filters.certification_id)
+            query = query.filter(
+                MovieModel.certification_id == filters.certification_id
+            )
         if filters.genre_id is not None:
             query = query.filter(MovieModel.genres.any(id=filters.genre_id))
         if filters.order_by:
             order_field = filters.order_by.lstrip("-")
             column = getattr(MovieModel, order_field, None)
             if column is not None:
-                query = query.order_by(column.desc() if filters.order_by.startswith("-") else column.asc())
-        count_query = select(func.count(MovieModel.id)).select_from(query.subquery())
+                query = query.order_by(
+                    column.desc()
+                    if filters.order_by.startswith("-")
+                    else column.asc()
+                )
+        count_query = select(func.count(MovieModel.id)).select_from(
+            query.subquery()
+        )
         total_count = await self.session.scalar(count_query)
-        query = query.options(
-            joinedload(MovieModel.certification),
-            joinedload(MovieModel.genres),
-            joinedload(MovieModel.stars),
-            joinedload(MovieModel.directors),
-        ).offset(skip).limit(limit)
+        query = (
+            query.options(
+                joinedload(MovieModel.certification),
+                joinedload(MovieModel.genres),
+                joinedload(MovieModel.stars),
+                joinedload(MovieModel.directors),
+            )
+            .offset(skip)
+            .limit(limit)
+        )
 
         result = await self.session.execute(query)
         movies = result.unique().scalars().all()

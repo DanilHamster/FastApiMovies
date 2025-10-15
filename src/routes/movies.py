@@ -7,10 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from filters.filter_movies import MovieFilter
 from repositories.movies import MovieRepository
-from schemas.movies import MovieCreate, MovieDetail, MovieListResponse, MovieUpdate
+from schemas.movies import (
+    MovieCreate,
+    MovieDetail,
+    MovieListResponse,
+    MovieUpdate,
+)
 
 router = APIRouter(prefix="/movies", tags=["Movies"])
-
 
 
 @router.get(
@@ -28,14 +32,18 @@ router = APIRouter(prefix="/movies", tags=["Movies"])
 )
 async def list_movies(
     page: int = Query(1, ge=1, description="Page number (1-based index)"),
-    per_page: int = Query(10, ge=1, le=100, description="Movies per page (1–100)"),
+    per_page: int = Query(
+        10, ge=1, le=100, description="Movies per page (1–100)"
+    ),
     filters: MovieFilter = FilterDepends(MovieFilter),
     session: AsyncSession = Depends(get_db),
 ) -> MovieListResponse:
     repo = MovieRepository(session)
     skip = (page - 1) * per_page
 
-    movies, total_count = await repo.filter_movies(filters=filters, skip=skip, limit=per_page)
+    movies, total_count = await repo.filter_movies(
+        filters=filters, skip=skip, limit=per_page
+    )
 
     if total_count == 0:
         raise HTTPException(status_code=404, detail="No movies found")
@@ -52,6 +60,7 @@ async def list_movies(
         has_prev=page > 1,
     )
 
+
 @router.get(
     "/{movie_id}",
     response_model=MovieDetail,
@@ -65,7 +74,9 @@ async def list_movies(
         200: {"description": "Movie details retrieved successfully."},
         404: {
             "description": "Movie not found.",
-            "content": {"application/json": {"example": {"detail": "Movie not found"}}},
+            "content": {
+                "application/json": {"example": {"detail": "Movie not found"}}
+            },
         },
     },
 )
@@ -93,7 +104,11 @@ async def read_movie(
         201: {"description": "Movie created successfully."},
         400: {
             "description": "Invalid input.",
-            "content": {"application/json": {"example": {"detail": "Invalid input data"}}},
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Invalid input data"}
+                }
+            },
         },
     },
 )
@@ -118,7 +133,9 @@ async def create_new_movie(
         200: {"description": "Movie updated successfully."},
         404: {
             "description": "Movie not found.",
-            "content": {"application/json": {"example": {"detail": "Movie not found"}}},
+            "content": {
+                "application/json": {"example": {"detail": "Movie not found"}}
+            },
         },
     },
 )
