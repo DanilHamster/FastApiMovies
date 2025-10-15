@@ -23,6 +23,7 @@ from database import (
     get_db,
 )
 from exceptions import BaseSecurityError
+from main import base_rout, api_version_prefix
 from notifications import EmailSenderInterface
 from schemas import (
     ChangePasswordRequestSchema,
@@ -85,19 +86,6 @@ async def register_user(
     Registers a new user, hashes their password, and assigns them to the default user group.
     If a user with the same email already exists, an HTTP 409 error is raised.
     In case of any unexpected issues during the creation process, an HTTP 500 error is returned.
-
-    Args:
-        user_data (UserRegistrationRequestSchema): The registration details including email and password.
-        db (AsyncSession): The asynchronous database session.
-        email_sender (EmailSenderInterface): The asynchronous email sender.
-
-    Returns:
-        UserRegistrationResponseSchema: The newly created user's details.
-
-    Raises:
-        HTTPException:
-            - 409 Conflict if a user with the same email exists.
-            - 500 Internal Server Error if an error occurs during user creation.
     """
     stmt = select(UserModel).where(UserModel.email == user_data.email)
     result = await db.execute(stmt)
@@ -140,7 +128,7 @@ async def register_user(
             detail="An error occurred during user creation.",
         ) from e
     else:
-        activation_link = f"http://127.0.0.1:8000/api/v1/accounts/activate/?token={activation_token.token}&email={new_user.email}"
+        activation_link = f"{base_rout}{api_version_prefix}/accounts/activate/?token={activation_token.token}&email={new_user.email}"
         background_tasks.add_task(email_sender.send_activation_email,new_user.email, activation_link)
 
         return UserRegistrationResponseSchema.model_validate(new_user)
@@ -162,6 +150,7 @@ async def register_user(
     },
 )
 async def resend_activation_email(
+    background_tasks: BackgroundTasks,
     email_data: EmailRequestSchema,
     db: AsyncSession = Depends(get_db),
     email_sender: EmailSenderInterface = Depends(
@@ -169,24 +158,10 @@ async def resend_activation_email(
     ),
 ) -> MessageResponseSchema:
     """
-    Endpoint to resend the activation email if the previous activation token expired.
-
     Checks if the user exists and is not already active.
     Deletes any existing activation tokens for the user,
     creates a new activation token with a 24-hour expiry,
     and sends an activation email.
-
-    Args:
-        email_data (EmailRequestSchema): Contains the user's email.
-        db (AsyncSession): The async database session.
-        email_sender (EmailSenderInterface): The async email sender.
-
-    Returns:
-        MessageResponseSchema: A confirmation message.
-
-    Raises:
-        HTTPException:
-            - 404 Not Found if user does not exist.
     """
     stmt = select(UserModel).where(UserModel.email == email_data.email)
     result = await db.execute(stmt)
@@ -212,9 +187,8 @@ async def resend_activation_email(
     db.add(new_token)
     await db.commit()
 
-    activation_link = f"http://127.0.0.1:8000/api/v1/accounts/activate/?token={new_token.token}&email={user.email}"
-
-    await email_sender.send_activation_email(user.email, activation_link)
+    activation_link = f"{base_rout}{api_version_prefix}/accounts/activate/?token={new_token.token}&email={user.email}"
+    background_tasks.add_task(email_sender.send_activation_email, user.email, activation_link)
 
     return MessageResponseSchema(
         message="A new activation email has been sent."
@@ -253,6 +227,7 @@ async def resend_activation_email(
     },
 )
 async def activate_account(
+    background_tasks: BackgroundTasks,
     activation_data: UserActivationRequestSchema,
     db: AsyncSession = Depends(get_db),
     email_sender: EmailSenderInterface = Depends(
@@ -260,25 +235,10 @@ async def activate_account(
     ),
 ) -> MessageResponseSchema:
     """
-    Endpoint to activate a user's account.
-
     This endpoint verifies the activation token for a user by checking that the token record exists
     and that it has not expired. If the token is valid and the user's account is not already active,
     the user's account is activated and the activation token is deleted. If the token is invalid, expired,
     or if the account is already active, an HTTP 400 error is raised.
-
-    Args:
-        activation_data (UserActivationRequestSchema): Contains the user's email and activation token.
-        db (AsyncSession): The asynchronous database session.
-        email_sender (EmailSenderInterface): The asynchronous email sender.
-
-    Returns:
-        MessageResponseSchema: A response message confirming successful activation.
-
-    Raises:
-        HTTPException:
-            - 400 Bad Request if the activation token is invalid or expired.
-            - 400 Bad Request if the user account is already active.
     """
     stmt = (
         select(ActivationTokenModel)
@@ -317,11 +277,8 @@ async def activate_account(
     await db.delete(token_record)
     await db.commit()
 
-    login_link = "http://127.0.0.1:8000/api/v1/accounts/login/"
-
-    await email_sender.send_activation_complete_email(
-        str(activation_data.email), login_link
-    )
+    login_link = f"{base_rout}{api_version_prefix}/accounts/login/"
+    background_tasks.add_task(email_sender.send_activation_complete_email, str(activation_data.email), login_link)
 
     return MessageResponseSchema(
         message="User account activated successfully."
@@ -369,19 +326,7 @@ async def change_password(
     db: AsyncSession = Depends(get_db),
 ) -> MessageResponseSchema:
     """
-    Change password endpoint.
-
-    Args:
-        data: Contains old_password and new_password.
-        current_user: The currently authenticated user.
-        db: Async database session.
-
-    Raises:
-        HTTPException 400 if old password is incorrect.
-        HTTPException 500 if database error occurs.
-
-    Returns:
-        MessageResponseSchema with success message.
+    Change password endpoint with old password.
     """
     if not current_user.verify_password(data.old_password):
         raise HTTPException(
@@ -414,6 +359,7 @@ async def change_password(
     status_code=status.HTTP_200_OK,
 )
 async def request_password_reset_token(
+    background_tasks: BackgroundTasks,
     data: PasswordResetRequestSchema,
     db: AsyncSession = Depends(get_db),
     email_sender: EmailSenderInterface = Depends(
@@ -421,18 +367,8 @@ async def request_password_reset_token(
     ),
 ) -> MessageResponseSchema:
     """
-    Endpoint to request a password reset token.
-
     If the user exists and is active, invalidates any existing password reset tokens and generates a new one.
     Always responds with a success message to avoid leaking user information.
-
-    Args:
-        data (PasswordResetRequestSchema): The request data containing the user's email.
-        db (AsyncSession): The asynchronous database session.
-        email_sender (EmailSenderInterface): The asynchronous email sender.
-
-    Returns:
-        MessageResponseSchema: A success message indicating that instructions will be sent.
     """
     stmt = select(UserModel).filter_by(email=data.email)
     result = await db.execute(stmt)
@@ -454,12 +390,9 @@ async def request_password_reset_token(
     await db.commit()
 
     password_reset_complete_link = (
-        f"http://127.0.0.1:8000/api/v1/accounts/password-reset-complete/?token={reset_token.token}"
+        f"{base_rout}{api_version_prefix}/accounts/password-reset-complete/?token={reset_token.token}"
     )
-
-    await email_sender.send_password_reset_email(
-        str(data.email), password_reset_complete_link
-    )
+    background_tasks.add_task(email_sender.send_password_reset_email, str(data.email), password_reset_complete_link)
 
     return MessageResponseSchema(
         message="If you are registered, you will receive an email with instructions."
@@ -506,6 +439,7 @@ async def request_password_reset_token(
     },
 )
 async def reset_password(
+    background_tasks: BackgroundTasks,
     data: PasswordResetCompleteRequestSchema,
     db: AsyncSession = Depends(get_db),
     email_sender: EmailSenderInterface = Depends(
@@ -513,24 +447,8 @@ async def reset_password(
     ),
 ) -> MessageResponseSchema:
     """
-    Endpoint for resetting a user's password.
-
     Validates the token and updates the user's password if the token is valid and not expired.
     Deletes the token after a successful password reset.
-
-    Args:
-        data (PasswordResetCompleteRequestSchema): The request data containing the user's email,
-         token, and new password.
-        db (AsyncSession): The asynchronous database session.
-        email_sender (EmailSenderInterface): The asynchronous email sender.
-
-    Returns:
-        MessageResponseSchema: A response message indicating successful password reset.
-
-    Raises:
-        HTTPException:
-            - 400 Bad Request if the email or token is invalid, or the token has expired.
-            - 500 Internal Server Error if an error occurs during the password reset process.
     """
     stmt = select(UserModel).filter_by(email=data.email)
     result = await db.execute(stmt)
@@ -576,11 +494,8 @@ async def reset_password(
             detail="An error occurred while resetting the password.",
         )
 
-    login_link = "http://127.0.0.1:8000/api/v1/accounts/login/"
-
-    await email_sender.send_password_reset_complete_email(
-        str(data.email), login_link
-    )
+    login_link = f"{base_rout}{api_version_prefix}/accounts/login/"
+    background_tasks.add_task(email_sender.send_password_reset_complete_email, str(data.email), login_link)
 
     return MessageResponseSchema(message="Password reset successfully.")
 
@@ -627,25 +542,8 @@ async def login_user(
     jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
 ) -> UserLoginResponseSchema:
     """
-    Endpoint for user login.
-
     Authenticates a user using their email and password.
     If authentication is successful, creates a new refresh token and returns both access and refresh tokens.
-
-    Args:
-        login_data (UserLoginRequestSchema): The login credentials.
-        db (AsyncSession): The asynchronous database session.
-        settings (BaseAppSettings): The application settings.
-        jwt_manager (JWTAuthManagerInterface): The JWT authentication manager.
-
-    Returns:
-        UserLoginResponseSchema: A response containing the access and refresh tokens.
-
-    Raises:
-        HTTPException:
-            - 401 Unauthorized if the email or password is invalid.
-            - 403 Forbidden if the user account is not activated.
-            - 500 Internal Server Error if an error occurs during token creation.
     """
     stmt = select(UserModel).filter_by(email=login_data.email)
     result = await db.execute(stmt)
@@ -720,15 +618,6 @@ async def logout_user(
 ) -> None:
     """
     Logs out the user by deleting the refresh token from the database.
-
-    Args:
-        refresh_token (str): The refresh token to invalidate, passed in headers.
-        db (AsyncSession): Async DB session.
-
-    Raises:
-        HTTPException:
-            - 401 Unauthorized if token not found or invalid.
-            - 500 Internal Server Error if DB error occurs.
     """
     stmt = select(RefreshTokenModel).where(
         RefreshTokenModel.token == refresh_token
@@ -790,24 +679,8 @@ async def refresh_access_token(
     jwt_manager: JWTAuthManagerInterface = Depends(get_jwt_auth_manager),
 ) -> TokenRefreshResponseSchema:
     """
-    Endpoint to refresh an access token.
-
     Validates the provided refresh token, extracts the user ID from it, and issues
     a new access token. If the token is invalid or expired, an error is returned.
-
-    Args:
-        token_data (TokenRefreshRequestSchema): Contains the refresh token.
-        db (AsyncSession): The asynchronous database session.
-        jwt_manager (JWTAuthManagerInterface): JWT authentication manager.
-
-    Returns:
-        TokenRefreshResponseSchema: A new access token.
-
-    Raises:
-        HTTPException:
-            - 400 Bad Request if the token is invalid or expired.
-            - 401 Unauthorized if the refresh token is not found.
-            - 404 Not Found if the user associated with the token does not exist.
     """
     try:
         decoded_token = jwt_manager.decode_refresh_token(
