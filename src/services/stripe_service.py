@@ -1,5 +1,7 @@
 import stripe
 from fastapi import HTTPException, status
+from stripe import StripeError, SignatureVerificationError
+
 from config.settings import Settings
 
 settings = Settings()
@@ -14,6 +16,7 @@ def create_checkout_session(
     metadata: dict | None = None,
 ) -> stripe.checkout.Session:
     try:
+        metadata = metadata or {}
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             line_items=[
@@ -34,7 +37,7 @@ def create_checkout_session(
             metadata=metadata,
         )
         return session
-    except stripe.error.StripeError as e:
+    except StripeError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
@@ -46,7 +49,7 @@ def verify_signature_and_construct_event(
             payload, sig_header, settings.stripe_webhook_secret
         )
         return event
-    except stripe.error.SignatureVerificationError:
+    except SignatureVerificationError:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid signature")
     except ValueError:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid payload")

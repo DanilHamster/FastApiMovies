@@ -4,6 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from decimal import Decimal
 
+from starlette.responses import JSONResponse
+
 from database import (
     CartModel,
     CartItemModel,
@@ -27,7 +29,7 @@ class CartAddItemSchema(BaseModel):
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
-async def get_cart(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def get_cart(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> JSONResponse:
     stmt = select(CartModel).where(CartModel.user_id == current_user.id).options(
         selectinload(CartModel.items).selectinload(CartItemModel.movie)
     )
