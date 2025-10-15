@@ -8,6 +8,7 @@ from database.models.payments import PaymentStatus
 from decimal import Decimal
 
 from database import Base
+from utils import get_current_user
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
@@ -20,10 +21,10 @@ class CheckoutRequest(Base):
 async def create_checkout(
     req: CheckoutRequest,
     db: AsyncSession = Depends(get_postgresql_db),
-    #current_user = Depends(get_current_user),
+    current_user = Depends(get_current_user),
 ):
     metadata = {
-        #"user_id": str(current_user.id),
+        "user_id": str(current_user.id),
         "order_id": str(req.order_id),
     }
     session = stripe_service.create_checkout_session(
@@ -36,7 +37,7 @@ async def create_checkout(
 
     await payment_service.create_payment(
         db=db,
-        #user_id=current_user.id,
+        user_id=current_user.id,
         order_id=req.order_id,
         amount=req.amount,
         external_payment_id=session.id,
