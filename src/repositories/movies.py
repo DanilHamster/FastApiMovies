@@ -17,6 +17,8 @@ from database.models.movies import (
 from filters.filter_movies import MovieFilter
 from notifications import EmailSenderInterface
 from schemas.movies import MovieCreate, MovieDetail, MovieUpdate
+from database.models.movies import DirectorModel, GenreModel, MovieModel, StarModel, Comment
+from schemas.movies import MovieCreate, MovieUpdate
 
 
 class MovieRepository:
