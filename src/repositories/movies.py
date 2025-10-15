@@ -1,8 +1,6 @@
 from typing import Any, List, Tuple, Type
 
 from fastapi import BackgroundTasks, Depends, HTTPException
-from sqlalchemy import func, select
-from fastapi import HTTPException
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
@@ -16,23 +14,9 @@ from database.models.movies import (
     MovieModel,
     StarModel,
 )
+from filters.filter_movies import MovieFilter
 from notifications import EmailSenderInterface
 from schemas.movies import MovieCreate, MovieDetail, MovieUpdate
-from database.models.movies import (
-    DirectorModel,
-    GenreModel,
-    MovieModel,
-    StarModel,
-    Comment,
-)
-from database.models.movies import (
-    DirectorModel,
-    GenreModel,
-    MovieModel,
-    StarModel,
-)
-from filters.filter_movies import MovieFilter
-from schemas.movies import MovieCreate, MovieUpdate
 
 
 class MovieRepository:

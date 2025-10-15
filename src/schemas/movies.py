@@ -148,11 +148,11 @@ class MovieListResponse(BaseModel):
     has_prev: bool
 
 
-class GenreBase(BaseModel):
+class GenreBaseList(BaseModel):
     genre_name: str
     count: int
     link: str
 
 
 class GenreResponseList(BaseModel):
-    genres: List[GenreBase]
+    genres: List[GenreBaseList]

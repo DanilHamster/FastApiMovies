@@ -10,9 +10,8 @@ from fastapi import (
     Path,
     Query,
 )
-from sqlalchemy import select, func
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query
 from fastapi_filter import FilterDepends
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -21,38 +20,24 @@ from database import MovieModel, UserModel, get_db
 from database.models.movies import (
     Comment,
     DislikeModel,
+    GenreModel,
     LikeModel,
     LikeTargetType,
-    GenreModel,
 )
+from filters.filter_movies import MovieFilter
 from notifications import EmailSenderInterface
 from repositories.movies import MovieRepository, notify_comment_like_user
 from schemas.movies import (
     CommentCreate,
     CommentResponse,
-    MovieCreate,
-    MovieDetail,
-    MovieListResponse,
-    MovieUpdate,
+    GenreBaseList,
     GenreResponseList,
-    GenreBase,
-)
-from database import get_db
-from filters.filter_movies import MovieFilter
-from repositories.movies import MovieRepository
-from schemas.movies import (
     MovieCreate,
     MovieDetail,
     MovieListResponse,
     MovieUpdate,
 )
 from utils import get_current_user
-from schemas.movies import (
-    MovieCreate,
-    MovieDetail,
-    MovieListResponse,
-    MovieUpdate,
-)
 
 router = APIRouter(prefix="/movies", tags=["Movies"])
 
@@ -375,7 +360,7 @@ async def adasdasdasd(
         result = await session.execute(counter)
         count = result.scalar()
         orders_list.append(
-            GenreBase(
+            GenreBaseList(
                 genre_name=genre.name,
                 count=count,
                 link=f"http://127.0.0.1:8000/api/v1/movies/?page=1&per_page=10&genre_id={genre.id}",
