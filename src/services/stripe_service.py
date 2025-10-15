@@ -5,6 +5,7 @@ from config.settings import Settings
 settings = Settings()
 stripe.api_key = settings.stripe_secret_key
 
+
 def create_checkout_session(
     amount: float,
     currency: str,
@@ -36,6 +37,7 @@ def create_checkout_session(
     except stripe.error.StripeError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(e))
 
+
 def verify_signature_and_construct_event(
     payload: bytes, sig_header: str
 ) -> stripe.Event:
@@ -44,7 +46,7 @@ def verify_signature_and_construct_event(
             payload, sig_header, settings.stripe_webhook_secret
         )
         return event
-    except stripe.error.SignatureVerificationError as error:
+    except stripe.error.SignatureVerificationError:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid signature")
-    except ValueError as error:
+    except ValueError:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid payload")

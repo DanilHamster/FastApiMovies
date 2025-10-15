@@ -17,6 +17,7 @@ from utils import get_current_user
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
+
 class CheckoutRequest(Base):
     __tablename__ = "checkout_requests"
 
@@ -25,12 +26,15 @@ class CheckoutRequest(Base):
     amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(10), nullable=False, default="usd")
 
+
 class CheckoutRequestSchema(BaseModel):
     order_id: int
     amount: Decimal
     currency: str = "usd"
 
+
 settings = Settings()
+
 
 @router.post("/checkout")
 async def create_checkout(
@@ -68,6 +72,7 @@ async def create_checkout(
 
     return {"checkout_url": session.url}
 
+
 @router.post("/webhook")
 async def stripe_webhook(
     request: Request, db: AsyncSession = Depends(get_postgresql_db)
@@ -96,12 +101,13 @@ async def stripe_webhook(
         if payment:
             await payment_service.update_payment_status(db, payment, PaymentStatus.canceled)
 
-
     return JSONResponse(status_code=status.HTTP_200_OK, content={"received": True})
+
 
 @router.get("/success")
 async def pay_success():
     return {"message": "Payment succeeded"}
+
 
 @router.get("/cancel")
 async def pay_cancel():

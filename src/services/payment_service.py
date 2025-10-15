@@ -11,6 +11,7 @@ from database.models.payments import Payment, PaymentStatus
 settings = Settings()
 stripe.api_key = settings.stripe_secret_key
 
+
 def verify_signature_and_construct_event(
     payload: bytes, sig_header: str
 ) -> stripe.Event:
@@ -19,10 +20,11 @@ def verify_signature_and_construct_event(
             payload, sig_header, settings.stripe_webhook_secret
         )
         return event
-    except stripe.error.SignatureVerificationError as e:
+    except stripe.error.SignatureVerificationError:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid signature")
-    except ValueError as e:
+    except ValueError:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid payload")
+
 
 async def create_payment(
     db: AsyncSession,
