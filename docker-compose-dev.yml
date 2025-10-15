@@ -132,6 +132,7 @@ services:
     environment:
       - CELERY_BROKER_URL=${CELERY_BROKER_URL}
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+      - POSTGRES_HOST=postgres_theater
     volumes:
       - .:/app
     depends_on:
