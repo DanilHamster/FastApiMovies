@@ -9,10 +9,22 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from config import get_accounts_email_notificator
 from database import UserModel
-from database.models.movies import Comment, DirectorModel, GenreModel, MovieModel, StarModel
+from database.models.movies import (
+    Comment,
+    DirectorModel,
+    GenreModel,
+    MovieModel,
+    StarModel,
+)
 from notifications import EmailSenderInterface
 from schemas.movies import MovieCreate, MovieDetail, MovieUpdate
-from database.models.movies import DirectorModel, GenreModel, MovieModel, StarModel, Comment
+from database.models.movies import (
+    DirectorModel,
+    GenreModel,
+    MovieModel,
+    StarModel,
+    Comment,
+)
 from database.models.movies import (
     DirectorModel,
     GenreModel,
@@ -69,7 +81,9 @@ class MovieRepository:
                 joinedload(MovieModel.genres),
                 joinedload(MovieModel.stars),
                 joinedload(MovieModel.directors),
-                selectinload(MovieModel.comments).selectinload(Comment.replies).selectinload(Comment.replies)
+                selectinload(MovieModel.comments)
+                .selectinload(Comment.replies)
+                .selectinload(Comment.replies),
             )
             .where(MovieModel.id == movie_id)
         )
@@ -243,7 +257,7 @@ async def notify_comment_like_user(
     db: AsyncSession,
     background_tasks: BackgroundTasks,
     target_id: int,
-    email_sender: EmailSenderInterface
+    email_sender: EmailSenderInterface,
 ) -> None:
 
     comment = await db.execute(select(Comment).where(Comment.id == target_id))
@@ -252,13 +266,14 @@ async def notify_comment_like_user(
     if comment_db is None:
         return
 
-    user = await db.execute(select(UserModel).where(UserModel.id == comment_db.user_id))
+    user = await db.execute(
+        select(UserModel).where(UserModel.id == comment_db.user_id)
+    )
     db_user = user.scalar_one_or_none()
 
     if db_user is None:
         return
 
     background_tasks.add_task(
-        email_sender.send_comments_notify_like,
-        str(db_user.email)
+        email_sender.send_comments_notify_like, str(db_user.email)
     )

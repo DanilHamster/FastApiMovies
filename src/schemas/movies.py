@@ -146,3 +146,13 @@ class MovieListResponse(BaseModel):
     total_pages: int
     has_next: bool
     has_prev: bool
+
+
+class GenreBase(BaseModel):
+    genre_name: str
+    count: int
+    link: str
+
+
+class GenreResponseList(BaseModel):
+    genres: List[GenreBase]
