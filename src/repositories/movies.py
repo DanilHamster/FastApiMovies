@@ -7,6 +7,7 @@ from sqlalchemy.orm import joinedload
 
 from database.models.movies import DirectorModel, GenreModel, MovieModel, StarModel
 from schemas.movies import MovieCreate, MovieUpdate
+from filters.filter_movies import MovieFilter
 
 
 class MovieRepository:
@@ -67,25 +68,12 @@ class MovieRepository:
             )
         )
         movie = movie_to_search.scalar_one_or_none()
-
         if movie:
-            raise HTTPException(
-                status_code=409,
-                detail="Such a movie already exists",
-            )
+            raise HTTPException(status_code=409, detail="Such a movie already exists")
 
-        genre_objs = [
-            await self.get_or_create(GenreModel, name=genre_name)
-            for genre_name in movie_data.genres
-        ]
-        star_objs = [
-            await self.get_or_create(StarModel, name=star_name)
-            for star_name in movie_data.stars
-        ]
-        director_objs = [
-            await self.get_or_create(DirectorModel, name=director_name)
-            for director_name in movie_data.directors
-        ]
+        genre_objs = [await self.get_or_create(GenreModel, name=g) for g in movie_data.genres]
+        star_objs = [await self.get_or_create(StarModel, name=s) for s in movie_data.stars]
+        director_objs = [await self.get_or_create(DirectorModel, name=d) for d in movie_data.directors]
 
         new_movie = MovieModel(
             name=movie_data.name,
@@ -105,9 +93,7 @@ class MovieRepository:
         self.session.add(new_movie)
         await self.session.commit()
         await self.session.refresh(new_movie)
-
-        full_movie = await self.get_by_id(new_movie.id)
-        return full_movie
+        return await self.get_by_id(new_movie.id)
 
     async def update(self, movie_id: int, movie_data: MovieUpdate) -> MovieModel | None:
         movie = await self.get_by_id(movie_id)
@@ -117,25 +103,16 @@ class MovieRepository:
         update_dict = movie_data.model_dump(exclude_unset=True)
 
         if "genres" in update_dict:
-            genre_ids = update_dict.pop("genres")
-            movie.genres = [
-                await self.get_or_create(GenreModel, name=genre_name)
-                for genre_name in genre_ids
-            ]
+            genre_names = update_dict.pop("genres")
+            movie.genres = [await self.get_or_create(GenreModel, name=g) for g in genre_names]
 
         if "stars" in update_dict:
-            star_ids = update_dict.pop("stars")
-            movie.stars = [
-                await self.get_or_create(StarModel, name=star_name)
-                for star_name in star_ids
-            ]
+            star_names = update_dict.pop("stars")
+            movie.stars = [await self.get_or_create(StarModel, name=s) for s in star_names]
 
         if "directors" in update_dict:
-            director_ids = update_dict.pop("directors")
-            movie.directors = [
-                await self.get_or_create(DirectorModel, name=director_name)
-                for director_name in director_ids
-            ]
+            director_names = update_dict.pop("directors")
+            movie.directors = [await self.get_or_create(DirectorModel, name=d) for d in director_names]
 
         for key, value in update_dict.items():
             setattr(movie, key, value)
@@ -148,7 +125,27 @@ class MovieRepository:
         movie = await self.get_by_id(movie_id)
         if not movie:
             return False
-
         await self.session.delete(movie)
         await self.session.commit()
         return True
+
+    async def filter_movies(self, filters: MovieFilter, skip: int = 0, limit: int = 10) -> Tuple[List[MovieModel], int]:
+        query = select(MovieModel)
+
+        query = filters.filter(query)
+
+        query = query.options(
+            joinedload(MovieModel.certification),
+            joinedload(MovieModel.genres),
+            joinedload(MovieModel.stars),
+            joinedload(MovieModel.directors),
+        )
+
+        count_query = select(func.count()).select_from(filters.filter(select(MovieModel)).subquery())
+        total_count = await self.session.scalar(count_query)
+
+        query = query.offset(skip).limit(limit)
+
+        result = await self.session.execute(query)
+        movies = result.unique().scalars().all()
+        return movies, total_count
