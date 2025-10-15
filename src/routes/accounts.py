@@ -1,7 +1,14 @@
 from datetime import datetime, timezone
 from typing import cast
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    Header,
+    HTTPException,
+    status,
+)
 from sqlalchemy import delete, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -129,7 +136,9 @@ async def register_user(
         ) from e
     else:
         activation_link = f"{BASE_URL}{API_VERSION_PREFIX}/accounts/activate/?token={activation_token.token}&email={new_user.email}"
-        background_tasks.add_task(email_sender.send_activation_email,new_user.email, activation_link)
+        background_tasks.add_task(
+            email_sender.send_activation_email, new_user.email, activation_link
+        )
 
         return UserRegistrationResponseSchema.model_validate(new_user)
 
@@ -188,7 +197,9 @@ async def resend_activation_email(
     await db.commit()
 
     activation_link = f"{BASE_URL}{API_VERSION_PREFIX}/accounts/activate/?token={new_token.token}&email={user.email}"
-    background_tasks.add_task(email_sender.send_activation_email, user.email, activation_link)
+    background_tasks.add_task(
+        email_sender.send_activation_email, user.email, activation_link
+    )
 
     return MessageResponseSchema(
         message="A new activation email has been sent."
@@ -278,7 +289,11 @@ async def activate_account(
     await db.commit()
 
     login_link = f"{BASE_URL}{API_VERSION_PREFIX}/accounts/login/"
-    background_tasks.add_task(email_sender.send_activation_complete_email, str(activation_data.email), login_link)
+    background_tasks.add_task(
+        email_sender.send_activation_complete_email,
+        str(activation_data.email),
+        login_link,
+    )
 
     return MessageResponseSchema(
         message="User account activated successfully."
@@ -389,10 +404,12 @@ async def request_password_reset_token(
     db.add(reset_token)
     await db.commit()
 
-    password_reset_complete_link = (
-        f"{BASE_URL}{API_VERSION_PREFIX}/accounts/password-reset-complete/?token={reset_token.token}"
+    password_reset_complete_link = f"{BASE_URL}{API_VERSION_PREFIX}/accounts/password-reset-complete/?token={reset_token.token}"
+    background_tasks.add_task(
+        email_sender.send_password_reset_email,
+        str(data.email),
+        password_reset_complete_link,
     )
-    background_tasks.add_task(email_sender.send_password_reset_email, str(data.email), password_reset_complete_link)
 
     return MessageResponseSchema(
         message="If you are registered, you will receive an email with instructions."
@@ -495,7 +512,11 @@ async def reset_password(
         )
 
     login_link = f"{BASE_URL}{API_VERSION_PREFIX}/accounts/login/"
-    background_tasks.add_task(email_sender.send_password_reset_complete_email, str(data.email), login_link)
+    background_tasks.add_task(
+        email_sender.send_password_reset_complete_email,
+        str(data.email),
+        login_link,
+    )
 
     return MessageResponseSchema(message="Password reset successfully.")
 
