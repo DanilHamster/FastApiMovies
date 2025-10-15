@@ -1,7 +1,7 @@
 from typing import Any, List, Tuple, Type
 
 from fastapi import HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import func, select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -130,22 +130,51 @@ class MovieRepository:
         return True
 
     async def filter_movies(self, filters: MovieFilter, skip: int = 0, limit: int = 10) -> Tuple[List[MovieModel], int]:
-        query = select(MovieModel)
+        query = select(MovieModel).distinct()
+        query = query.outerjoin(MovieModel.directors).outerjoin(MovieModel.stars)
+        search_conditions = []
+        if filters.name__ilike:
+            search_conditions.append(MovieModel.name.ilike(f"%{filters.name__ilike}%"))
+        if filters.description__ilike:
+            search_conditions.append(MovieModel.description.ilike(f"%{filters.description__ilike}%"))
+        if filters.director_name__ilike:
+            search_conditions.append(DirectorModel.name.ilike(f"%{filters.director_name__ilike}%"))
+        if filters.star_name__ilike:
+            search_conditions.append(StarModel.name.ilike(f"%{filters.star_name__ilike}%"))
 
-        query = filters.filter(query)
-
+        if search_conditions:
+            query = query.filter(or_(*search_conditions))
+        if filters.year__gte is not None:
+            query = query.filter(MovieModel.year >= filters.year__gte)
+        if filters.year__lte is not None:
+            query = query.filter(MovieModel.year <= filters.year__lte)
+        if filters.imdb__gte is not None:
+            query = query.filter(MovieModel.imdb >= filters.imdb__gte)
+        if filters.imdb__lte is not None:
+            query = query.filter(MovieModel.imdb <= filters.imdb__lte)
+        if filters.price__gte is not None:
+            query = query.filter(MovieModel.price >= filters.price__gte)
+        if filters.price__lte is not None:
+            query = query.filter(MovieModel.price <= filters.price__lte)
+        if filters.certification_id is not None:
+            query = query.filter(MovieModel.certification_id == filters.certification_id)
+        if filters.genre_id is not None:
+            query = query.filter(MovieModel.genres.any(id=filters.genre_id))
+        if filters.order_by:
+            order_field = filters.order_by.lstrip("-")
+            column = getattr(MovieModel, order_field, None)
+            if column is not None:
+                query = query.order_by(column.desc() if filters.order_by.startswith("-") else column.asc())
+        count_query = select(func.count(MovieModel.id)).select_from(query.subquery())
+        total_count = await self.session.scalar(count_query)
         query = query.options(
             joinedload(MovieModel.certification),
             joinedload(MovieModel.genres),
             joinedload(MovieModel.stars),
             joinedload(MovieModel.directors),
-        )
-
-        count_query = select(func.count()).select_from(filters.filter(select(MovieModel)).subquery())
-        total_count = await self.session.scalar(count_query)
-
-        query = query.offset(skip).limit(limit)
+        ).offset(skip).limit(limit)
 
         result = await self.session.execute(query)
         movies = result.unique().scalars().all()
+
         return movies, total_count
