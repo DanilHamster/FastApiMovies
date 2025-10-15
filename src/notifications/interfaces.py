@@ -46,3 +46,13 @@ class EmailSenderInterface(ABC):
             login_link (str): The login link to include in the email.
         """
         pass
+
+    @abstractmethod
+    async def send_comments_notify_like(self, email: str) -> None:
+        """
+        Send a Notify about reaction on comment.
+
+        Args:
+            email (str): The recipient's email address.
+        """
+        pass

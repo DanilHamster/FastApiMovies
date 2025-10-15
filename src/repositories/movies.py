@@ -3,9 +3,9 @@ from typing import Any, List, Tuple, Type
 from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
-from database.models.movies import DirectorModel, GenreModel, MovieModel, StarModel
+from database.models.movies import DirectorModel, GenreModel, MovieModel, StarModel, Comment
 from schemas.movies import MovieCreate, MovieUpdate
 
 
@@ -53,6 +53,7 @@ class MovieRepository:
                 joinedload(MovieModel.genres),
                 joinedload(MovieModel.stars),
                 joinedload(MovieModel.directors),
+                selectinload(MovieModel.comments).selectinload(Comment.replies)
             )
             .where(MovieModel.id == movie_id)
         )
