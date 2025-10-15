@@ -203,14 +203,7 @@ class MovieRepository:
         if filters.genre_id is not None:
             query = query.filter(MovieModel.genres.any(id=filters.genre_id))
         if filters.order_by:
-            order_field = filters.order_by.lstrip("-")
-            column = getattr(MovieModel, order_field, None)
-            if column is not None:
-                query = query.order_by(
-                    column.desc()
-                    if filters.order_by.startswith("-")
-                    else column.asc()
-                )
+            query = filters.sort(query)
         count_query = select(func.count(MovieModel.id)).select_from(
             query.subquery()
         )
