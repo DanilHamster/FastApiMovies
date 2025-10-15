@@ -1,14 +1,14 @@
 from schemas.accounts import (
-    UserRegistrationRequestSchema,
-    UserRegistrationResponseSchema,
+    ChangePasswordRequestSchema,
+    EmailRequestSchema,
     MessageResponseSchema,
-    UserActivationRequestSchema,
-    PasswordResetRequestSchema,
     PasswordResetCompleteRequestSchema,
-    UserLoginResponseSchema,
-    UserLoginRequestSchema,
+    PasswordResetRequestSchema,
     TokenRefreshRequestSchema,
     TokenRefreshResponseSchema,
-    ChangePasswordRequestSchema,
-    EmailRequestSchema
+    UserActivationRequestSchema,
+    UserLoginRequestSchema,
+    UserLoginResponseSchema,
+    UserRegistrationRequestSchema,
+    UserRegistrationResponseSchema,
 )
