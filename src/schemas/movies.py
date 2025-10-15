@@ -123,7 +123,7 @@ class MovieDetail(MovieBase):
     certification: CertificationResponse
     like_count: int = 0
     dislike_count: int = 0
-    comments: List[CommentResponse] = None
+    comments: Optional[List[CommentResponse]] = None
 
 
 class MovieList(BaseModel):
