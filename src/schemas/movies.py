@@ -3,6 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from schemas import EmailRequestSchema
+
 
 class GenreBase(BaseModel):
     name: str = Field(max_length=255)
@@ -43,18 +45,34 @@ class CertificationBase(BaseModel):
 class CertificationResponse(CertificationBase):
     id: int
 
+
 class CommentBase(BaseModel):
     id: int
 
-class CommentCreate(CommentBase):
+
+class CommentCreate(BaseModel):
     text: str
+
 
 class Comment(CommentBase):
     text: str
     like_count: int = 0
-    replies: List["Comment"] = []
+
 
 Comment.model_rebuild()
+
+
+class CommentResponse(BaseModel):
+    id: int
+    text: str
+    like_count: int
+    replies: List["Comment"] = []
+
+    class Config:
+        orm_mode = True
+
+
+CommentResponse.model_rebuild()
 
 
 class MovieBase(BaseModel):
@@ -105,7 +123,7 @@ class MovieDetail(MovieBase):
     certification: CertificationResponse
     like_count: int = 0
     dislike_count: int = 0
-    comments: List[Comment]
+    comments: List[CommentResponse]
 
 
 class MovieList(BaseModel):

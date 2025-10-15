@@ -1,12 +1,15 @@
 from typing import Any, List, Tuple, Type
 
-from fastapi import HTTPException
+from fastapi import BackgroundTasks, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
-from database.models.movies import DirectorModel, GenreModel, MovieModel, StarModel, Comment
-from schemas.movies import MovieCreate, MovieUpdate
+from config import get_accounts_email_notificator
+from database import UserModel
+from database.models.movies import Comment, DirectorModel, GenreModel, MovieModel, StarModel
+from notifications import EmailSenderInterface
+from schemas.movies import MovieCreate, MovieDetail, MovieUpdate
 
 
 class MovieRepository:
@@ -53,7 +56,7 @@ class MovieRepository:
                 joinedload(MovieModel.genres),
                 joinedload(MovieModel.stars),
                 joinedload(MovieModel.directors),
-                selectinload(MovieModel.comments).selectinload(Comment.replies)
+                selectinload(MovieModel.comments).selectinload(Comment.replies).selectinload(Comment.replies)
             )
             .where(MovieModel.id == movie_id)
         )
@@ -112,6 +115,7 @@ class MovieRepository:
 
     async def update(self, movie_id: int, movie_data: MovieUpdate) -> MovieModel | None:
         movie = await self.get_by_id(movie_id)
+
         if not movie:
             return None
 
@@ -153,3 +157,28 @@ class MovieRepository:
         await self.session.delete(movie)
         await self.session.commit()
         return True
+
+
+async def notify_comment_like_user(
+    db: AsyncSession,
+    background_tasks: BackgroundTasks,
+    target_id: int,
+    email_sender: EmailSenderInterface
+) -> None:
+
+    comment = await db.execute(select(Comment).where(Comment.id == target_id))
+    comment_db = comment.scalar_one_or_none()
+
+    if comment_db is None:
+        return
+
+    user = await db.execute(select(UserModel).where(UserModel.id == comment_db.user_id))
+    db_user = user.scalar_one_or_none()
+
+    if db_user is None:
+        return
+
+    background_tasks.add_task(
+        email_sender.send_comments_notify_like,
+        str(db_user.email)
+    )
