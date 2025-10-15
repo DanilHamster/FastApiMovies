@@ -12,18 +12,9 @@ from fastapi import (
 )
 from fastapi_filter import FilterDepends
 from sqlalchemy import func, select
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, BackgroundTasks
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from config import get_accounts_email_notificator
-from database import get_db, UserModel
-from database.models.movies import LikeTargetType, DislikeModel, LikeModel, Comment
-from notifications import EmailSenderInterface
-from repositories.movies import MovieRepository
-from schemas.movies import MovieCreate, MovieDetail, MovieListResponse, MovieUpdate
-from utils import get_current_user
 from config import get_accounts_email_notificator
 from database import MovieModel, UserModel, get_db
 from database.models.movies import (
