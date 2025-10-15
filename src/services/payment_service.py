@@ -1,5 +1,7 @@
 import stripe
 from fastapi import HTTPException, status
+from stripe import SignatureVerificationError
+
 from config.settings import Settings
 
 from decimal import Decimal
@@ -20,7 +22,7 @@ def verify_signature_and_construct_event(
             payload, sig_header, settings.stripe_webhook_secret
         )
         return event
-    except stripe.error.SignatureVerificationError:
+    except SignatureVerificationError:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid signature")
     except ValueError:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid payload")

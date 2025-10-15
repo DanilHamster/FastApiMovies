@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +14,9 @@ from database import (
     MovieModel,
     OrderModel,
     OrderItemModel,
-    get_db, PaymentStatus,
+    get_db,
+    PaymentStatus,
+    UserModel,
 )
 from database.models.orders import OrderStatusEnum
 from utils import get_current_user
@@ -29,17 +33,21 @@ class CartAddItemSchema(BaseModel):
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
-async def get_cart(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> JSONResponse:
+async def get_cart(
+        current_user= Annotated[UserModel,
+        Depends(get_current_user)],
+        db: AsyncSession = Depends(get_db)
+) -> JSONResponse:
     stmt = select(CartModel).where(CartModel.user_id == current_user.id).options(
         selectinload(CartModel.items).selectinload(CartItemModel.movie)
     )
     cart = (await db.execute(stmt)).scalar_one_or_none()
     if not cart or not cart.items:
-        return {"items": [], "total_amount": "0.00"}
+        return JSONResponse(content={"items": [], "total_amount": "0.00"})
 
     total_amount = sum(Decimal(item.movie.price) for item in cart.items)
     items = [{"movie_id": i.movie_id, "name": i.movie.name, "price": str(i.movie.price)} for i in cart.items]
-    return {"items": items, "total_amount": str(total_amount)}
+    return JSONResponse(content={"items": items, "total_amount": str(total_amount)})
 
 
 @router.post("/add", status_code=status.HTTP_201_CREATED)
@@ -47,7 +55,7 @@ async def add_to_cart(
         item: CartAddItemSchema,
         current_user=Depends(get_current_user),
         db: AsyncSession = Depends(get_db)
-):
+) -> JSONResponse:
     movie = (await db.execute(select(MovieModel).where(MovieModel.id == item.movie_id))).scalar_one_or_none()
     if not movie:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Movie not found")
@@ -70,11 +78,15 @@ async def add_to_cart(
     cart.items.append(CartItemModel(movie_id=item.movie_id))
     await db.commit()
     await db.refresh(cart)
-    return {"message": "Movie added to cart"}
+    return JSONResponse(content={"message": "Movie added to cart"})
 
 
 @router.delete("/remove/{movie_id}", status_code=status.HTTP_200_OK)
-async def remove_from_cart(movie_id: int, current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def remove_from_cart(
+        movie_id: int,
+        current_user=Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
+) -> JSONResponse:
     cart = ((
         await db.execute(select(CartModel)
                          .where(CartModel.user_id == current_user.id)
@@ -86,11 +98,11 @@ async def remove_from_cart(movie_id: int, current_user=Depends(get_current_user)
 
     cart.items = [ci for ci in cart.items if ci.movie_id != movie_id]
     await db.commit()
-    return {"message": "Movie removed from cart"}
+    return JSONResponse(content={"message": "Movie removed from cart"})
 
 
 @router.post("/checkout", status_code=status.HTTP_201_CREATED)
-async def checkout_cart(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def checkout_cart(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> JSONResponse:
     cart = ((
         await db.execute(select(CartModel)
                          .where(CartModel.user_id == current_user.id)
@@ -104,7 +116,7 @@ async def checkout_cart(current_user=Depends(get_current_user), db: AsyncSession
     total_amount = sum(Decimal(item.movie.price) for item in cart.items)
     order = OrderModel(user_id=current_user.id, total_amount=total_amount, status=OrderStatusEnum.PENDING)
     for ci in cart.items:
-        order.items.append(OrderItemModel(movie_id=ci.movie_id, price_at_order=Decimal(ci.movie.price)))
+        order.items.append(OrderItemModel(movie_id=ci.movie_id, price_at_order=ci.movie.price))
 
     db.add(order)
     cart.items = []
@@ -129,4 +141,4 @@ async def checkout_cart(current_user=Depends(get_current_user), db: AsyncSession
         status=PaymentStatus.canceled,
     )
 
-    return {"checkout_url": session.url, "order_id": order.id}
+    return JSONResponse(content={"checkout_url": session.url, "order_id": order.id})
