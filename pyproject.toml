@@ -39,7 +39,11 @@ celery = {extras = ["redis"], version = "^5.5.3"}
 mypy = "^1.18.2"
 isort = "^7.0.0"
 exc = "^0.92"
+fastapi-filter = "^2.0.1"
 
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.9.0"
 
 [build-system]
 requires = ["poetry-core"]
