@@ -5,7 +5,7 @@ from routes import (
     accounts,
     admin_orders_router,
     orders_router,
-    payments
+    payments, shopping_cart
 )
 from routes.movies import router as movies_router
 
@@ -21,3 +21,4 @@ app.include_router(movies_router, prefix=api_version_prefix)
 app.include_router(orders_router, prefix=api_version_prefix)
 app.include_router(admin_orders_router, prefix=api_version_prefix)
 app.include_router(payments.router, prefix=api_version_prefix)
+app.include_router(shopping_cart.router, prefix=api_version_prefix)
