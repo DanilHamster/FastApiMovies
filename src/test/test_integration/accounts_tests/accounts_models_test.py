@@ -36,7 +36,6 @@ async def async_session():
 
 @pytest.fixture(autouse=True)
 async def clean_database(async_session):
-    """Очищає таблиці перед кожним тестом."""
     await async_session.execute(delete(ActivationTokenModel))
     await async_session.execute(delete(PasswordResetTokenModel))
     await async_session.execute(delete(RefreshTokenModel))
