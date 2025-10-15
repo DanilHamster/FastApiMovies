@@ -3,8 +3,9 @@ from typing import Any, List, Tuple, Type
 from fastapi import HTTPException
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
+from database.models.movies import DirectorModel, GenreModel, MovieModel, StarModel, Comment
 from database.models.movies import (
     DirectorModel,
     GenreModel,
@@ -61,6 +62,7 @@ class MovieRepository:
                 joinedload(MovieModel.genres),
                 joinedload(MovieModel.stars),
                 joinedload(MovieModel.directors),
+                selectinload(MovieModel.comments).selectinload(Comment.replies)
             )
             .where(MovieModel.id == movie_id)
         )
@@ -75,9 +77,11 @@ class MovieRepository:
             )
         )
         movie = movie_to_search.scalar_one_or_none()
+
         if movie:
             raise HTTPException(
-                status_code=409, detail="Such a movie already exists"
+                status_code=409,
+                detail="Such a movie already exists",
             )
 
         genre_objs = [
@@ -153,6 +157,7 @@ class MovieRepository:
         movie = await self.get_by_id(movie_id)
         if not movie:
             return False
+
         await self.session.delete(movie)
         await self.session.commit()
         return True

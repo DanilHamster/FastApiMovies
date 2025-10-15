@@ -1,12 +1,20 @@
 from math import ceil
 
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, BackgroundTasks
+from sqlalchemy import select
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query
 from fastapi_filter import FilterDepends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from config import get_accounts_email_notificator
+from database import get_db, UserModel
+from database.models.movies import LikeTargetType, DislikeModel, LikeModel, Comment
+from notifications import EmailSenderInterface
 from database import get_db
 from filters.filter_movies import MovieFilter
 from repositories.movies import MovieRepository
+from schemas.movies import MovieCreate, MovieDetail, MovieListResponse, MovieUpdate
+from utils import get_current_user
 from schemas.movies import (
     MovieCreate,
     MovieDetail,
@@ -29,6 +37,13 @@ router = APIRouter(prefix="/movies", tags=["Movies"])
         "<li><code>?name__ilike=Matrix</code></li>"
         "</ul>"
     ),
+    responses={
+        200: {"description": "Movies retrieved successfully."},
+        404: {
+            "description": "No movies found.",
+            "content": {"application/json": {"example": {"detail": "No movies found"}}},
+        },
+    },
 )
 async def list_movies(
     page: int = Query(1, ge=1, description="Page number (1-based index)"),
@@ -186,3 +201,146 @@ async def remove_movie(
         raise HTTPException(status_code=404, detail="Movie not found")
 
     return {"detail": "Movie deleted successfully."}
+
+
+@router.post("/like/")
+async def like(
+        background_tasks: BackgroundTasks,
+        target_id: int,
+        target_type: LikeTargetType,
+        db: AsyncSession = Depends(get_db),
+        current_user: UserModel = Depends(get_current_user),
+        email_sender: EmailSenderInterface = Depends(
+            get_accounts_email_notificator)
+) -> dict:
+    if target_type == LikeTargetType.MOVIE:
+        check_dislike = await db.execute(
+            select(DislikeModel).where(DislikeModel.movie_id == target_id, DislikeModel.user_id == current_user.id))
+        db_check_dislike = check_dislike.scalar_one_or_none()
+        if db_check_dislike:
+            await db.delete(db_check_dislike)
+            await db.commit()
+
+    result = await db.execute(
+        select(LikeModel).where(
+            LikeModel.user_id == current_user.id,
+            LikeModel.target_id == target_id,
+            LikeModel.target_type == target_type
+        )
+    )
+    existing_like = result.scalar_one_or_none()
+
+    if existing_like:
+        await db.delete(existing_like)
+        await db.commit()
+        return {"message": f"Removed like"}
+
+    new_like = LikeModel(
+        user_id=current_user.id,
+        target_id=target_id,
+        target_type=target_type
+    )
+    db.add(new_like)
+    await db.commit()
+
+    if target_type == LikeTargetType.COMMENT:
+        comment = await db.execute(select(Comment).where(Comment.id == target_id))
+        comment_db = comment.scalar_one_or_none()
+        user = await db.execute(select(UserModel).where(UserModel.id == comment_db.user_id))
+        db_user = user.scalar_one_or_none()
+
+        background_tasks.add_task(
+            email_sender.send_comments_notify_like,
+            str(db_user.email)
+        )
+
+    return {"message": f"Liked"}
+
+
+@router.post("/dislike/")
+async def dislike(
+        movie_id: int,
+        db: AsyncSession = Depends(get_db),
+        current_user: UserModel = Depends(get_current_user),
+) -> dict:
+
+    check_like = await db.execute(
+        select(LikeModel).where(LikeModel.target_id == movie_id, LikeModel.user_id == current_user.id))
+    db_check_like = check_like.scalar_one_or_none()
+    if db_check_like:
+        await db.delete(db_check_like)
+        await db.commit()
+
+    check_like = await db.execute(
+        select(DislikeModel).where(DislikeModel.movie_id == movie_id, DislikeModel.user_id == current_user.id))
+    db_check_like = check_like.scalar_one_or_none()
+    if db_check_like:
+        await db.delete(db_check_like)
+        await db.commit()
+        return {"message": f"Removed dislike"}
+
+    new_dislike = DislikeModel(
+        user_id=current_user.id,
+        movie_id=movie_id,
+    )
+    db.add(new_dislike)
+    await db.commit()
+
+    return {"message": f"Disliked"}
+
+
+@router.post("/dislike/")
+async def dislike(
+        movie_id: int,
+        db: AsyncSession = Depends(get_db),
+        current_user: UserModel = Depends(get_current_user),
+) -> dict:
+
+    check_like = await db.execute(
+        select(LikeModel).where(LikeModel.target_id == movie_id, LikeModel.user_id == current_user.id))
+    db_check_like = check_like.scalar_one_or_none()
+    if db_check_like:
+        await db.delete(db_check_like)
+        await db.commit()
+
+    check_like = await db.execute(
+        select(DislikeModel).where(DislikeModel.movie_id == movie_id, DislikeModel.user_id == current_user.id))
+    db_check_like = check_like.scalar_one_or_none()
+    if db_check_like:
+        await db.delete(db_check_like)
+        await db.commit()
+        return {"message": f"Removed dislike"}
+
+    new_dislike = DislikeModel(
+        user_id=current_user.id,
+        movie_id=movie_id,
+    )
+    db.add(new_dislike)
+    await db.commit()
+
+    return {"message": f"Disliked"}
+
+
+@router.post("/comment/")
+async def comment(
+        background_tasks: BackgroundTasks,
+        target_id: int,
+        target_type: LikeTargetType,
+        db: AsyncSession = Depends(get_db),
+        current_user: UserModel = Depends(get_current_user),
+        email_sender: EmailSenderInterface = Depends(
+            get_accounts_email_notificator)
+) -> dict:
+
+    new_comment = Comment(
+        user_id=current_user.id,
+        text="sadadasda",
+        target_id=target_id,
+        target_type=target_type
+
+    )
+
+    db.add(new_comment)
+    await db.commit()
+
+    return {"message": f"Comment"}

@@ -43,6 +43,19 @@ class CertificationBase(BaseModel):
 class CertificationResponse(CertificationBase):
     id: int
 
+class CommentBase(BaseModel):
+    id: int
+
+class CommentCreate(CommentBase):
+    text: str
+
+class Comment(CommentBase):
+    text: str
+    like_count: int = 0
+    replies: List["Comment"] = []
+
+Comment.model_rebuild()
+
 
 class MovieBase(BaseModel):
     name: str = Field(max_length=255)
@@ -90,6 +103,9 @@ class MovieDetail(MovieBase):
     stars: List[StarResponse] = Field(default_factory=list)
     directors: List[DirectorResponse] = Field(default_factory=list)
     certification: CertificationResponse
+    like_count: int = 0
+    dislike_count: int = 0
+    comments: List[Comment]
 
 
 class MovieList(BaseModel):
@@ -98,6 +114,8 @@ class MovieList(BaseModel):
     year: int
     imdb: float
     price: float
+    like_count: int = 0
+    dislike_count: int = 0
 
     model_config = {"from_attributes": True}
 
