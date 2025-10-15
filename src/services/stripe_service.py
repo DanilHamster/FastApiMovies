@@ -2,7 +2,8 @@ import stripe
 from fastapi import HTTPException, status
 from config.settings import Settings
 
-stripe.api_key = Settings.stripe_secret_key
+settings = Settings()
+stripe.api_key = settings.stripe_secret_key
 
 def create_checkout_session(
     amount: float,
@@ -40,7 +41,7 @@ def verify_signature_and_construct_event(
 ) -> stripe.Event:
     try:
         event = stripe.Webhook.construct_event(
-            payload, sig_header, Settings.stripe_webhook_secret
+            payload, sig_header, settings.stripe_webhook_secret
         )
         return event
     except stripe.error.SignatureVerificationError as error:
