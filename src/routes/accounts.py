@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import cast
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, status
 from sqlalchemy import delete, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +13,7 @@ from config import (
     get_jwt_auth_manager,
     get_settings,
 )
+from config.settings import API_VERSION_PREFIX, BASE_URL
 from database import (
     ActivationTokenModel,
     PasswordResetTokenModel,
@@ -23,7 +24,6 @@ from database import (
     get_db,
 )
 from exceptions import BaseSecurityError
-from main import base_rout, api_version_prefix
 from notifications import EmailSenderInterface
 from schemas import (
     ChangePasswordRequestSchema,
@@ -128,7 +128,7 @@ async def register_user(
             detail="An error occurred during user creation.",
         ) from e
     else:
-        activation_link = f"{base_rout}{api_version_prefix}/accounts/activate/?token={activation_token.token}&email={new_user.email}"
+        activation_link = f"{BASE_URL}{API_VERSION_PREFIX}/accounts/activate/?token={activation_token.token}&email={new_user.email}"
         background_tasks.add_task(email_sender.send_activation_email,new_user.email, activation_link)
 
         return UserRegistrationResponseSchema.model_validate(new_user)
@@ -187,7 +187,7 @@ async def resend_activation_email(
     db.add(new_token)
     await db.commit()
 
-    activation_link = f"{base_rout}{api_version_prefix}/accounts/activate/?token={new_token.token}&email={user.email}"
+    activation_link = f"{BASE_URL}{API_VERSION_PREFIX}/accounts/activate/?token={new_token.token}&email={user.email}"
     background_tasks.add_task(email_sender.send_activation_email, user.email, activation_link)
 
     return MessageResponseSchema(
@@ -277,7 +277,7 @@ async def activate_account(
     await db.delete(token_record)
     await db.commit()
 
-    login_link = f"{base_rout}{api_version_prefix}/accounts/login/"
+    login_link = f"{BASE_URL}{API_VERSION_PREFIX}/accounts/login/"
     background_tasks.add_task(email_sender.send_activation_complete_email, str(activation_data.email), login_link)
 
     return MessageResponseSchema(
@@ -390,7 +390,7 @@ async def request_password_reset_token(
     await db.commit()
 
     password_reset_complete_link = (
-        f"{base_rout}{api_version_prefix}/accounts/password-reset-complete/?token={reset_token.token}"
+        f"{BASE_URL}{API_VERSION_PREFIX}/accounts/password-reset-complete/?token={reset_token.token}"
     )
     background_tasks.add_task(email_sender.send_password_reset_email, str(data.email), password_reset_complete_link)
 
@@ -494,7 +494,7 @@ async def reset_password(
             detail="An error occurred while resetting the password.",
         )
 
-    login_link = f"{base_rout}{api_version_prefix}/accounts/login/"
+    login_link = f"{BASE_URL}{API_VERSION_PREFIX}/accounts/login/"
     background_tasks.add_task(email_sender.send_password_reset_complete_email, str(data.email), login_link)
 
     return MessageResponseSchema(message="Password reset successfully.")

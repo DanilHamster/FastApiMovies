@@ -4,6 +4,8 @@ from typing import Any
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+BASE_URL = "http://127.0.0.1:8000"
+API_VERSION_PREFIX = "/api/v1"
 
 class BaseAppSettings(BaseSettings):
     BASE_DIR: Path = Path(__file__).parent.parent
