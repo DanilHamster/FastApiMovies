@@ -227,6 +227,7 @@ class MovieRepository:
         )
 
         result = await self.session.execute(query)
-        movies = result.unique().scalars().all()
+        movies = list(result.unique().scalars().all())
+        total_count = total_count or 0
 
         return movies, total_count
