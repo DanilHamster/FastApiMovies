@@ -2,6 +2,7 @@ from typing import Optional
 from fastapi_filter.contrib.sqlalchemy import Filter
 from database.models.movies import MovieModel
 
+
 class MovieFilter(Filter):
     name__ilike: Optional[str] = None
     description__ilike: Optional[str] = None
