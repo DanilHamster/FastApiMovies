@@ -52,7 +52,7 @@ async def get_cart(
 @router.post("/add", status_code=status.HTTP_201_CREATED)
 async def add_to_cart(
         item: CartAddItemSchema,
-        current_user=Depends(get_current_user),
+        current_user=Annotated[UserModel, Depends(get_current_user)],
         db: AsyncSession = Depends(get_db)
 ) -> JSONResponse:
     movie = (await db.execute(select(MovieModel).where(MovieModel.id == item.movie_id))).scalar_one_or_none()
@@ -101,7 +101,10 @@ async def remove_from_cart(
 
 
 @router.post("/checkout", status_code=status.HTTP_201_CREATED)
-async def checkout_cart(current_user=Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> JSONResponse:
+async def checkout_cart(
+        current_user=Annotated[UserModel, Depends(get_current_user)],
+        db: AsyncSession = Depends(get_db)
+) -> JSONResponse:
     cart = ((
         await db.execute(select(CartModel)
                          .where(CartModel.user_id == current_user.id)
