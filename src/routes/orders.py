@@ -213,6 +213,13 @@ async def create_order(
             )
         )
 
+    response_items = [
+        OrderItemOutSchema(
+            movie_id=ci.movie_id, price_at_order=str(ci.movie.price)
+        )
+        for ci in cart_items
+    ]
+
     db.add(order)
     await db.commit()
     await db.refresh(order)
@@ -222,12 +229,6 @@ async def create_order(
     )
     await db.commit()
 
-    items = [
-        OrderItemOutSchema(
-            movie_id=item.movie_id, price_at_order=str(item.price_at_order)
-        )
-        for item in order.items
-    ]
     return OrderOutSchema(
         id=order.id,
         status=(
@@ -237,7 +238,7 @@ async def create_order(
         ),
         total_amount=str(order.total_amount),
         created_at=order.created_at,
-        items=items,
+        items=response_items,
     )
 
 
