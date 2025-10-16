@@ -8,7 +8,7 @@ from sqlalchemy import Integer, Numeric, String, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
-from config.settings import Settings, BASE_URL
+from config.settings import BASE_URL, Settings
 from database import Base, OrderModel
 from database.models.accounts import UserModel
 from database.models.orders import OrderStatusEnum
