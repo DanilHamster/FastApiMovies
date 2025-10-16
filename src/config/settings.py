@@ -42,6 +42,10 @@ class BaseAppSettings(BaseSettings):
     )
     S3_BUCKET_NAME: str = os.getenv("MINIO_STORAGE", "theater-storage")
 
+    stripe_secret_key: str = os.getenv("STRIPE_SECRET_KEY", "sk_test_...")
+    stripe_publishable_key: str = os.getenv("STRIPE_PUBLISHABLE_KEY", "pk_test_...")
+    stripe_webhook_secret: str = os.getenv("STRIPE_WEBHOOK_SECRET", "whsec_...")
+
     @property
     def S3_STORAGE_ENDPOINT(self) -> str:
         return f"http://{self.S3_STORAGE_HOST}:{self.S3_STORAGE_PORT}"
