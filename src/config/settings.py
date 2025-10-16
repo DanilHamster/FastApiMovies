@@ -46,7 +46,6 @@ class BaseAppSettings(BaseSettings):
     stripe_publishable_key: str = os.getenv("STRIPE_PUBLISHABLE_KEY", "pk_test_...")
     stripe_webhook_secret: str = os.getenv("STRIPE_WEBHOOK_SECRET", "whsec_...")
 
-
     @property
     def S3_STORAGE_ENDPOINT(self) -> str:
         return f"http://{self.S3_STORAGE_HOST}:{self.S3_STORAGE_PORT}"
