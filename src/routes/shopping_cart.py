@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from starlette.responses import JSONResponse
 
-from config.settings import Settings
+from config import get_settings
 from database import (
     CartItemModel,
     CartModel,
@@ -25,7 +25,7 @@ from services import payment_service, stripe_service
 from utils import get_current_user
 
 router = APIRouter(prefix="/cart", tags=["shopping_cart"])
-settings = Settings()
+settings = get_settings()
 
 
 class CartAddItemSchema(BaseModel):

@@ -2,9 +2,9 @@ import stripe
 from fastapi import HTTPException, status
 from stripe import SignatureVerificationError, StripeError
 
-from config.settings import Settings
+from config import get_settings
 
-settings = Settings()
+settings = get_settings()
 stripe.api_key = settings.stripe_secret_key
 
 

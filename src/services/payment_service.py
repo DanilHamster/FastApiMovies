@@ -6,10 +6,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from stripe import SignatureVerificationError
 
-from config.settings import Settings
+from config import get_settings
 from database.models.payments import Payment, PaymentStatus
 
-settings = Settings()
+settings = get_settings()
 stripe.api_key = settings.stripe_secret_key
 
 

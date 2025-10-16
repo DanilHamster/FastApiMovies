@@ -8,7 +8,8 @@ from sqlalchemy import Integer, Numeric, String, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
-from config.settings import BASE_URL, Settings
+from config import get_settings
+from config.settings import BASE_URL
 from database import Base, OrderModel
 from database.models.accounts import UserModel
 from database.models.orders import OrderStatusEnum
@@ -35,7 +36,7 @@ class CheckoutRequestSchema(BaseModel):
     currency: str = "usd"
 
 
-settings = Settings()
+settings = get_settings()
 
 
 @router.post("/checkout")
