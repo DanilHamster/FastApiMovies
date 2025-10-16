@@ -8,7 +8,7 @@ from sqlalchemy import Integer, Numeric, String, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
-from config.settings import Settings
+from config.settings import Settings, BASE_URL
 from database import Base, OrderModel
 from database.models.accounts import UserModel
 from database.models.orders import OrderStatusEnum
@@ -58,8 +58,8 @@ async def create_checkout(
     session = stripe_service.create_checkout_session(
         amount=float(order.total_amount),
         currency="usd",
-        success_url=f"{settings.app_base_url}/payments/success",
-        cancel_url=f"{settings.app_base_url}/payments/cancel",
+        success_url=f"{BASE_URL}/payments/success",
+        cancel_url=f"{BASE_URL}/payments/cancel",
         metadata=metadata,
     )
     amount = Decimal(str(order.total_amount))
