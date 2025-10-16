@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Request, status, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -14,6 +16,7 @@ from decimal import Decimal
 
 from database import Base, OrderModel
 from utils import get_current_user
+from database.models.accounts import UserModel
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
@@ -39,18 +42,18 @@ settings = Settings()
 @router.post("/checkout")
 async def create_checkout(
     req: CheckoutRequestSchema,
-    db: AsyncSession = Depends(get_postgresql_db),
-    current_user=Depends(get_current_user),
-):
+    db: Annotated[AsyncSession, Depends(get_postgresql_db)],
+    current_user: Annotated[UserModel, Depends(get_current_user)],
+) -> JSONResponse:
     stmt = select(OrderModel).where(
         OrderModel.id == req.order_id, OrderModel.user_id == current_user.id
     )
     order = (await db.execute(stmt)).scalar_one_or_none()
     if not order:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Order not found")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Order not found")
 
     if order.status != OrderStatusEnum.PENDING:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Order not pending")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Order not pending")
 
     metadata = {"user_id": str(current_user.id), "order_id": str(order.id)}
     session = stripe_service.create_checkout_session(
@@ -67,16 +70,17 @@ async def create_checkout(
         order_id=order.id,
         amount=amount,
         external_payment_id=session.id,
-        status=PaymentStatus.canceled,  # тимчасово
+        status=PaymentStatus.canceled,
     )
 
-    return {"checkout_url": session.url}
+    return JSONResponse(content={"checkout_url": session.url})
 
 
 @router.post("/webhook")
 async def stripe_webhook(
-    request: Request, db: AsyncSession = Depends(get_postgresql_db)
-):
+    request: Request,
+    db: Annotated[AsyncSession, Depends(get_postgresql_db)]
+) -> JSONResponse:
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
 
@@ -94,7 +98,7 @@ async def stripe_webhook(
                 order.status = OrderStatusEnum.PAID
                 await db.commit()
 
-    elif event.type == "checkout.session.expired" or event.type == "checkout.session.canceled":
+    elif event.type in {"checkout.session.expired", "checkout.session.canceled"}:
         session = event.data.object
         external_id = session["id"]
         payment = await payment_service.get_payment_by_external_id(db, external_id)
@@ -105,10 +109,10 @@ async def stripe_webhook(
 
 
 @router.get("/success")
-async def pay_success():
-    return {"message": "Payment succeeded"}
+async def pay_success() -> JSONResponse:
+    return JSONResponse(content={"message": "Payment succeeded"})
 
 
 @router.get("/cancel")
-async def pay_cancel():
-    return {"message": "Payment canceled"}
+async def pay_cancel() -> JSONResponse:
+    return JSONResponse(content={"message": "Payment canceled"})

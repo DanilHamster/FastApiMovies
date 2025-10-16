@@ -7,6 +7,7 @@ from sqlalchemy.orm import selectinload
 from decimal import Decimal
 
 from starlette.responses import JSONResponse
+from fastapi.responses import JSONResponse as FastAPIJSONResponse
 
 from database import (
     CartModel,
@@ -34,9 +35,9 @@ class CartAddItemSchema(BaseModel):
 
 @router.get("/", status_code=status.HTTP_200_OK)
 async def get_cart(
-        current_user=Annotated[UserModel, Depends(get_current_user)],
-        db: AsyncSession = Depends(get_db)
-) -> JSONResponse:
+    current_user: Annotated[UserModel, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)]
+) -> FastAPIJSONResponse:
     stmt = select(CartModel).where(CartModel.user_id == current_user.id).options(
         selectinload(CartModel.items).selectinload(CartItemModel.movie)
     )
@@ -51,10 +52,10 @@ async def get_cart(
 
 @router.post("/add", status_code=status.HTTP_201_CREATED)
 async def add_to_cart(
-        item: CartAddItemSchema,
-        current_user=Annotated[UserModel, Depends(get_current_user)],
-        db: AsyncSession = Depends(get_db)
-) -> JSONResponse:
+    item: CartAddItemSchema,
+    current_user: Annotated[UserModel, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)]
+) -> FastAPIJSONResponse:
     movie = (await db.execute(select(MovieModel).where(MovieModel.id == item.movie_id))).scalar_one_or_none()
     if not movie:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Movie not found")
@@ -82,10 +83,10 @@ async def add_to_cart(
 
 @router.delete("/remove/{movie_id}", status_code=status.HTTP_200_OK)
 async def remove_from_cart(
-        movie_id: int,
-        current_user=Depends(get_current_user),
-        db: AsyncSession = Depends(get_db)
-) -> JSONResponse:
+    movie_id: int,
+    current_user: Annotated[UserModel, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)]
+) -> FastAPIJSONResponse:
     cart = ((
         await db.execute(select(CartModel)
                          .where(CartModel.user_id == current_user.id)
@@ -102,9 +103,9 @@ async def remove_from_cart(
 
 @router.post("/checkout", status_code=status.HTTP_201_CREATED)
 async def checkout_cart(
-        current_user=Annotated[UserModel, Depends(get_current_user)],
-        db: AsyncSession = Depends(get_db)
-) -> JSONResponse:
+    current_user: Annotated[UserModel, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)]
+) -> FastAPIJSONResponse:
     cart = ((
         await db.execute(select(CartModel)
                          .where(CartModel.user_id == current_user.id)
