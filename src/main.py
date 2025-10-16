@@ -6,12 +6,6 @@ from routes import (
     orders_router,
     profiles,
 )
-from config.settings import API_VERSION_PREFIX
-from routes import (
-    accounts,
-    admin_orders_router,
-    orders_router,
-)
 from routes.movies import router as movies_router
 
 app = FastAPI(
