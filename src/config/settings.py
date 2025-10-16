@@ -45,7 +45,7 @@ class BaseAppSettings(BaseSettings):
 
     @property
     def S3_STORAGE_ENDPOINT(self) -> str:
-        return f"http://{self.S3_STORAGE_HOST}:{self.S3_STORAGE_PORT}"
+        return "https://s3.eu-central-1.amazonaws.com"
 
 
 class Settings(BaseAppSettings):
