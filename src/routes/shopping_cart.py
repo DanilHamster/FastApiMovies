@@ -156,7 +156,6 @@ async def checkout_cart(
     await db.commit()
     await db.refresh(order)
 
-    # Stripe is not implemented anymore; just return created order information
     return JSONResponse(
         content={"order_id": order.id, "message": "Order created"}
     )

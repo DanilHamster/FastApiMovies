@@ -1,5 +1,4 @@
 from math import ceil
-from typing import Any, List
 
 from fastapi import (
     APIRouter,
@@ -13,7 +12,6 @@ from fastapi import (
 from fastapi_filter import FilterDepends
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from config import get_accounts_email_notificator
 from database import MovieModel, UserModel, get_db
@@ -29,7 +27,6 @@ from notifications import EmailSenderInterface
 from repositories.movies import MovieRepository, notify_comment_like_user
 from schemas.movies import (
     CommentCreate,
-    CommentResponse,
     GenreBaseList,
     GenreResponseList,
     MovieCreate,
@@ -345,7 +342,7 @@ async def comment(
 
 
 @router.get("/genres/", response_model=GenreResponseList)
-async def adasdasdasd(
+async def get_genres(
     session: AsyncSession = Depends(get_db),
 ) -> GenreResponseList:
     genres = await session.execute(select(GenreModel))
