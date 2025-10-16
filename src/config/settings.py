@@ -44,7 +44,7 @@ class BaseAppSettings(BaseSettings):
 
     @property
     def S3_STORAGE_ENDPOINT(self) -> str:
-        return f"https://s3.eu-central-1.amazonaws.com"
+        return "https://s3.eu-central-1.amazonaws.com"
 
 
 class Settings(BaseAppSettings):
