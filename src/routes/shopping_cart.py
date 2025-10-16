@@ -60,41 +60,43 @@ async def get_cart(
 
 @router.post("/add", status_code=status.HTTP_201_CREATED)
 async def add_to_cart(
-    item: CartAddItemSchema,
-    current_user: Annotated[UserModel, Depends(get_current_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
-) -> FastAPIJSONResponse:
+        item: CartAddItemSchema,
+        current_user: Annotated[UserModel, Depends(get_current_user)],
+        db: Annotated[AsyncSession, Depends(get_db)],
+) -> JSONResponse:
     movie = (
-        await db.execute(
-            select(MovieModel).where(MovieModel.id == item.movie_id)
-        )
+        await db.execute(select(MovieModel).where(MovieModel.id == item.movie_id))
     ).scalar_one_or_none()
     if not movie:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, detail="Movie not found"
-        )
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Movie not found")
 
     cart = (
-        await db.execute(
-            select(CartModel)
-            .where(CartModel.user_id == current_user.id)
-            .options(selectinload(CartModel.items))
-        )
+        await db.execute(select(CartModel).where(CartModel.user_id == current_user.id))
     ).scalar_one_or_none()
+
     if not cart:
         cart = CartModel(user_id=current_user.id)
         db.add(cart)
         await db.commit()
         await db.refresh(cart)
 
-    if any(ci.movie_id == item.movie_id for ci in cart.items):
+    exists_query = await db.execute(
+        select(CartItemModel)
+        .where(
+            CartItemModel.cart_id == cart.id,
+            CartItemModel.movie_id == item.movie_id
+        )
+    )
+    if exists_query.scalar_one_or_none():
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, detail="Movie already in cart"
         )
 
-    cart.items.append(CartItemModel(movie_id=item.movie_id))
+    cart_item = CartItemModel(cart_id=cart.id, movie_id=item.movie_id)
+    db.add(cart_item)
     await db.commit()
-    await db.refresh(cart)
+    await db.refresh(cart_item)
+
     return JSONResponse(content={"message": "Movie added to cart"})
 
 
