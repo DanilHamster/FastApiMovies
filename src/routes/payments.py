@@ -10,11 +10,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from config import get_settings
 from config.settings import BASE_URL
-from database import Base, OrderModel
+from database import Base, OrderModel, get_db
 from database.models.accounts import UserModel
 from database.models.orders import OrderStatusEnum
 from database.models.payments import PaymentStatus
-from database.session_postgresql import get_postgresql_db
 from services import payment_service, stripe_service
 from utils import get_current_user
 
@@ -42,7 +41,7 @@ settings = get_settings()
 @router.post("/checkout")
 async def create_checkout(
     req: CheckoutRequestSchema,
-    db: Annotated[AsyncSession, Depends(get_postgresql_db)],
+    db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[UserModel, Depends(get_current_user)],
 ) -> JSONResponse:
     stmt = select(OrderModel).where(
@@ -79,7 +78,7 @@ async def create_checkout(
 @router.post("/webhook")
 async def stripe_webhook(
     request: Request,
-    db: Annotated[AsyncSession, Depends(get_postgresql_db)]
+    db: Annotated[AsyncSession, Depends(get_db)]
 ) -> JSONResponse:
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
