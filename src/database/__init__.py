@@ -1,6 +1,5 @@
 import os
 
-from database.models.base import Base
 from database.models.accounts import (
     ActivationTokenModel,
     PasswordResetTokenModel,
@@ -10,22 +9,21 @@ from database.models.accounts import (
     UserModel,
     UserProfileModel,
 )
+from database.models.base import Base
 from database.models.movies import (
-    GenreModel,
-    StarModel,
-    DirectorModel,
     CertificationModel,
+    DirectorModel,
+    GenreModel,
     MovieModel,
-)
-from database.models.payments import (
-    PaymentStatus,
-    Payment,
-    PaymentItem,
+    StarModel,
 )
 from database.models.orders import OrderItemModel, OrderModel
-
-from database.models.shopping_cart import CartModel, CartItemModel
-
+from database.models.payments import (
+    Payment,
+    PaymentItem,
+    PaymentStatus,
+)
+from database.models.shopping_cart import CartItemModel, CartModel
 from database.session_sqlite import reset_sqlite_database as reset_database
 from database.validators import accounts as validators
 

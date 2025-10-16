@@ -1,6 +1,6 @@
 import stripe
 from fastapi import HTTPException, status
-from stripe import StripeError, SignatureVerificationError
+from stripe import SignatureVerificationError, StripeError
 
 from config.settings import Settings
 

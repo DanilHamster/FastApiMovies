@@ -1,22 +1,21 @@
+from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, status, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from sqlalchemy import select, Integer, Numeric, String
+from sqlalchemy import Integer, Numeric, String, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
 from config.settings import Settings
-from database.models.orders import OrderStatusEnum
-from services import stripe_service, payment_service
-from database.session_postgresql import get_postgresql_db
-from database.models.payments import PaymentStatus
-from decimal import Decimal
-
 from database import Base, OrderModel
-from utils import get_current_user
 from database.models.accounts import UserModel
+from database.models.orders import OrderStatusEnum
+from database.models.payments import PaymentStatus
+from database.session_postgresql import get_postgresql_db
+from services import payment_service, stripe_service
+from utils import get_current_user
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 

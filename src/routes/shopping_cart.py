@@ -1,29 +1,28 @@
+from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse as FastAPIJSONResponse
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from decimal import Decimal
-
 from starlette.responses import JSONResponse
-from fastapi.responses import JSONResponse as FastAPIJSONResponse
 
+from config.settings import Settings
 from database import (
-    CartModel,
     CartItemModel,
+    CartModel,
     MovieModel,
-    OrderModel,
     OrderItemModel,
-    get_db,
+    OrderModel,
     PaymentStatus,
     UserModel,
+    get_db,
 )
 from database.models.orders import OrderStatusEnum
+from services import payment_service, stripe_service
 from utils import get_current_user
-from services import stripe_service, payment_service
-from config.settings import Settings
-from pydantic import BaseModel
 
 router = APIRouter(prefix="/cart", tags=["shopping_cart"])
 settings = Settings()
