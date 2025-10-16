@@ -4,6 +4,9 @@ from database.models.base import Base
 from database.models.accounts import (
     ActivationTokenModel,
     PasswordResetTokenModel,
+    RefreshTokenModel,
+    UserGroupEnum,
+    UserGroupModel,
     UserModel,
     UserProfileModel,
 )
@@ -27,6 +30,7 @@ from database.session_sqlite import reset_sqlite_database as reset_database
 from database.validators import accounts as validators
 
 environment = os.getenv("ENVIRONMENT", "developing")
+
 if environment == "testing":
     from database.session_sqlite import get_sqlite_db as get_db
     from database.session_sqlite import get_sqlite_db_contextmanager as get_db_contextmanager

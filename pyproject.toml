@@ -42,6 +42,7 @@ exc = "^0.92"
 stripe = "^11.0.0"
 fastapi-filter = "^2.0.1"
 
+
 [tool.poetry.group.dev.dependencies]
 black = "^25.9.0"
 
