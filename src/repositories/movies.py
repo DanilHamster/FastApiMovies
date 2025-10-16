@@ -1,7 +1,8 @@
-from typing import Any, List, Tuple, Type
+from typing import Any, Type
 
 from fastapi import BackgroundTasks, Depends, HTTPException
-from sqlalchemy import func, or_, select
+from fastapi import HTTPException
+from sqlalchemy import distinct, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -36,7 +37,7 @@ class MovieRepository:
 
     async def get_all(
         self, skip: int = 0, limit: int = 100
-    ) -> Tuple[List[MovieModel], int]:
+    ) -> tuple[list[MovieModel], int]:
         count_result = await self.session.execute(
             select(func.count()).select_from(MovieModel)
         )
@@ -170,11 +171,12 @@ class MovieRepository:
 
     async def filter_movies(
         self, filters: MovieFilter, skip: int = 0, limit: int = 10
-    ) -> Tuple[List[MovieModel], int]:
-        query = select(MovieModel).distinct()
-        query = query.outerjoin(MovieModel.directors).outerjoin(
+    ) -> tuple[list[MovieModel], int]:
+        base_query = select(MovieModel).distinct()
+        base_query = base_query.outerjoin(MovieModel.directors).outerjoin(
             MovieModel.stars
         )
+
         search_conditions = []
         if filters.name__ilike:
             search_conditions.append(
@@ -194,33 +196,53 @@ class MovieRepository:
             )
 
         if search_conditions:
-            query = query.filter(or_(*search_conditions))
+            base_query = base_query.filter(or_(*search_conditions))
         if filters.year__gte is not None:
-            query = query.filter(MovieModel.year >= filters.year__gte)
+            base_query = base_query.filter(
+                MovieModel.year >= filters.year__gte
+            )
         if filters.year__lte is not None:
-            query = query.filter(MovieModel.year <= filters.year__lte)
+            base_query = base_query.filter(
+                MovieModel.year <= filters.year__lte
+            )
         if filters.imdb__gte is not None:
-            query = query.filter(MovieModel.imdb >= filters.imdb__gte)
+            base_query = base_query.filter(
+                MovieModel.imdb >= filters.imdb__gte
+            )
         if filters.imdb__lte is not None:
-            query = query.filter(MovieModel.imdb <= filters.imdb__lte)
+            base_query = base_query.filter(
+                MovieModel.imdb <= filters.imdb__lte
+            )
         if filters.price__gte is not None:
-            query = query.filter(MovieModel.price >= filters.price__gte)
+            base_query = base_query.filter(
+                MovieModel.price >= filters.price__gte
+            )
         if filters.price__lte is not None:
-            query = query.filter(MovieModel.price <= filters.price__lte)
+            base_query = base_query.filter(
+                MovieModel.price <= filters.price__lte
+            )
         if filters.certification_id is not None:
-            query = query.filter(
+            base_query = base_query.filter(
                 MovieModel.certification_id == filters.certification_id
             )
         if filters.genre_id is not None:
-            query = query.filter(MovieModel.genres.any(id=filters.genre_id))
+            base_query = base_query.filter(
+                MovieModel.genres.any(id=filters.genre_id)
+            )
         if filters.order_by:
-            query = filters.sort(query)
-        count_query = select(func.count(MovieModel.id)).select_from(
-            query.subquery()
+            base_query = filters.sort(base_query)
+
+        count_query = select(func.count(distinct(MovieModel.id)))
+        count_query = count_query.outerjoin(MovieModel.directors).outerjoin(
+            MovieModel.stars
         )
+        count_query = count_query.filter(*base_query._where_criteria)
+
         total_count = await self.session.scalar(count_query)
+        total_count = total_count or 0
+
         query = (
-            query.options(
+            base_query.options(
                 joinedload(MovieModel.certification),
                 joinedload(MovieModel.genres),
                 joinedload(MovieModel.stars),
@@ -232,7 +254,6 @@ class MovieRepository:
 
         result = await self.session.execute(query)
         movies = list(result.unique().scalars().all())
-        total_count = total_count or 0
 
         return movies, total_count
 
