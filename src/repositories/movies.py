@@ -1,18 +1,23 @@
 from typing import Any, Type
 
+from fastapi import BackgroundTasks, Depends, HTTPException
 from fastapi import HTTPException
 from sqlalchemy import distinct, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
+from config import get_accounts_email_notificator
+from database import UserModel
 from database.models.movies import (
+    Comment,
     DirectorModel,
     GenreModel,
     MovieModel,
     StarModel,
 )
 from filters.filter_movies import MovieFilter
-from schemas.movies import MovieCreate, MovieUpdate
+from notifications import EmailSenderInterface
+from schemas.movies import MovieCreate, MovieDetail, MovieUpdate
 
 
 class MovieRepository:
@@ -61,6 +66,9 @@ class MovieRepository:
                 joinedload(MovieModel.genres),
                 joinedload(MovieModel.stars),
                 joinedload(MovieModel.directors),
+                selectinload(MovieModel.comments)
+                .selectinload(Comment.replies)
+                .selectinload(Comment.replies),
             )
             .where(MovieModel.id == movie_id)
         )
@@ -75,9 +83,11 @@ class MovieRepository:
             )
         )
         movie = movie_to_search.scalar_one_or_none()
+
         if movie:
             raise HTTPException(
-                status_code=409, detail="Such a movie already exists"
+                status_code=409,
+                detail="Such a movie already exists",
             )
 
         genre_objs = [
@@ -117,6 +127,7 @@ class MovieRepository:
         self, movie_id: int, movie_data: MovieUpdate
     ) -> MovieModel | None:
         movie = await self.get_by_id(movie_id)
+
         if not movie:
             return None
 
@@ -153,6 +164,7 @@ class MovieRepository:
         movie = await self.get_by_id(movie_id)
         if not movie:
             return False
+
         await self.session.delete(movie)
         await self.session.commit()
         return True
@@ -244,3 +256,29 @@ class MovieRepository:
         movies = list(result.unique().scalars().all())
 
         return movies, total_count
+
+
+async def notify_comment_like_user(
+    db: AsyncSession,
+    background_tasks: BackgroundTasks,
+    target_id: int,
+    email_sender: EmailSenderInterface,
+) -> None:
+
+    comment = await db.execute(select(Comment).where(Comment.id == target_id))
+    comment_db = comment.scalar_one_or_none()
+
+    if comment_db is None:
+        return
+
+    user = await db.execute(
+        select(UserModel).where(UserModel.id == comment_db.user_id)
+    )
+    db_user = user.scalar_one_or_none()
+
+    if db_user is None:
+        return
+
+    background_tasks.add_task(
+        email_sender.send_comments_notify_like, str(db_user.email)
+    )

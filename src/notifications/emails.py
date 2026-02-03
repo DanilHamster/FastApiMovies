@@ -23,6 +23,7 @@ class EmailSender(EmailSenderInterface):
         activation_complete_email_template_name: str,
         password_email_template_name: str,
         password_complete_email_template_name: str,
+        send_comments_notify_like: str,
     ):
         self._hostname = hostname
         self._port = port
@@ -33,6 +34,7 @@ class EmailSender(EmailSenderInterface):
         self._activation_complete_email_template_name = activation_complete_email_template_name
         self._password_email_template_name = password_email_template_name
         self._password_complete_email_template_name = password_complete_email_template_name
+        self._send_comments_notify_like = send_comments_notify_like
 
         self._env = Environment(loader=FileSystemLoader(template_dir))
 
@@ -118,4 +120,17 @@ class EmailSender(EmailSenderInterface):
         template = self._env.get_template(self._password_complete_email_template_name)
         html_content = template.render(email=email, login_link=login_link)
         subject = "Your Password Has Been Successfully Reset"
+        await self._send_email(email, subject, html_content)
+
+    async def send_comments_notify_like(self, email: str) -> None:
+        """
+        Send a password reset completion email asynchronously.
+
+        Args:
+            email (str): The recipient's email address.
+            login_link (str): The login link to be included in the email.
+        """
+        template = self._env.get_template(self._send_comments_notify_like)
+        html_content = template.render(email=email)
+        subject = "Reaction on your comment"
         await self._send_email(email, subject, html_content)

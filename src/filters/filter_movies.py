@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from fastapi_filter.contrib.sqlalchemy import Filter
 
@@ -18,7 +18,7 @@ class MovieFilter(Filter):
     genre_id: Optional[int] = None
     director_name__ilike: Optional[str] = None
     star_name__ilike: Optional[str] = None
-    order_by: Optional[str] = None
+    order_by: Optional[List[str]] = None
 
     class Constants(Filter.Constants):
         model = MovieModel

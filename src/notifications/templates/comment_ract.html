@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Comment Reaction Notification</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(circle at top left, #fce4ec, #e0f7fa);
+      padding: 40px;
+      margin: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: linear-gradient(135deg, #ffffff, #f9f9f9);
+      padding: 30px;
+      border-radius: 16px;
+      border: 2px dashed #007BFF;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
+      background-repeat: repeat;
+      animation: fadeIn 1s ease-in-out;
+    }
+    h2 {
+      color: #333;
+      font-size: 26px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .highlight {
+      color: #007BFF;
+      font-weight: bold;
+    }
+    .message {
+      font-size: 17px;
+      color: #444;
+      margin: 20px 0;
+      line-height: 1.6;
+      text-align: center;
+    }
+    .footer {
+      font-size: 14px;
+      color: #888;
+      border-top: 1px solid #eee;
+      padding-top: 15px;
+      margin-top: 30px;
+      text-align: center;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Dear <span class="highlight">{{ email }}</span>,</h2>
+    <p class="message">
+      🎉 Your comment has received a new reaction!<br>
+      Someone appreciated your input — keep sharing your thoughts!
+    </p>
+    <p class="footer">
+      Best regards
+    </p>
+  </div>
+</body>
+</html>

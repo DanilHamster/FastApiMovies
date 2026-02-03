@@ -17,7 +17,10 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from database import Base
-from database.validators.accounts import validate_email, validate_password_strength
+from database.validators.accounts import (
+    validate_email,
+    validate_password_strength,
+)
 from security import generate_secure_token, hash_password, verify_password
 
 
@@ -116,6 +119,19 @@ class UserModel(Base):
 
     cart: Mapped["CartModel"] = relationship(
         "CartModel", back_populates="user", uselist=False
+    )
+
+    likes = relationship(
+        "LikeModel", back_populates="user", cascade="all, delete-orphan"
+    )
+    dislikes = relationship(
+        "DislikeModel", back_populates="user", cascade="all, delete-orphan"
+    )
+
+    comments: Mapped[list["Comment"]] = relationship(
+        "Comment",
+        back_populates="user",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:

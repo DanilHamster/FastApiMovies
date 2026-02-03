@@ -3,6 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from schemas import EmailRequestSchema
+
 
 class GenreBase(BaseModel):
     name: str = Field(max_length=255)
@@ -42,6 +44,35 @@ class CertificationBase(BaseModel):
 
 class CertificationResponse(CertificationBase):
     id: int
+
+
+class CommentBase(BaseModel):
+    id: int
+
+
+class CommentCreate(BaseModel):
+    text: str
+
+
+class Comment(CommentBase):
+    text: str
+    like_count: int = 0
+
+
+Comment.model_rebuild()
+
+
+class CommentResponse(BaseModel):
+    id: int
+    text: str
+    like_count: int
+    replies: List["Comment"] = []
+
+    class Config:
+        orm_mode = True
+
+
+CommentResponse.model_rebuild()
 
 
 class MovieBase(BaseModel):
@@ -90,6 +121,9 @@ class MovieDetail(MovieBase):
     stars: List[StarResponse] = Field(default_factory=list)
     directors: List[DirectorResponse] = Field(default_factory=list)
     certification: CertificationResponse
+    like_count: int = 0
+    dislike_count: int = 0
+    comments: Optional[List[CommentResponse]] = None
 
 
 class MovieList(BaseModel):
@@ -98,6 +132,8 @@ class MovieList(BaseModel):
     year: int
     imdb: float
     price: float
+    like_count: int = 0
+    dislike_count: int = 0
 
     model_config = {"from_attributes": True}
 
@@ -110,3 +146,13 @@ class MovieListResponse(BaseModel):
     total_pages: int
     has_next: bool
     has_prev: bool
+
+
+class GenreBaseList(BaseModel):
+    genre_name: str
+    count: int
+    link: str
+
+
+class GenreResponseList(BaseModel):
+    genres: List[GenreBaseList]

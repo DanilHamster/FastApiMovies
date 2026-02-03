@@ -407,9 +407,8 @@ async def request_password_reset_token(
     db.add(reset_token)
     await db.commit()
 
-    password_reset_complete_link = (
-        f"{BASE_URL}{API_VERSION_PREFIX}/accounts/password-reset-complete/?token={reset_token.token}"
-    )
+    password_reset_complete_link = (f"{BASE_URL}{API_VERSION_PREFIX}/accounts/password-reset-complete/?token="
+                                    f"{reset_token.token}")
     background_tasks.add_task(
         email_sender.send_password_reset_email,
         str(data.email),
